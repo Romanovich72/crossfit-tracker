@@ -5,41 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>WOD Tracker — Кроссфит, питание и самочувствие</title>
 
-  <!-- PWA / iOS Home Screen Meta -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="WOD Tracker" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- Inline SVG App Icon (OLED Black & Crimson) -->
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23000000'/%3E%3Ccircle cx='90' cy='90' r='62' fill='none' stroke='%2326262e' stroke-width='14'/%3E%3Ccircle cx='90' cy='90' r='62' fill='none' stroke='%23ef4444' stroke-width='14' stroke-dasharray='290 390' stroke-linecap='round' transform='rotate(-90 90 90)'/%3E%3Cpath d='M56 92h14l10-24 14 48 12-34 8 10h12' fill='none' stroke='%23ffffff' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
 
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <style>
-    :root {
-      --bg-oled: #000000;
-      --card-bg: #111217;
-      --card-elevated: #181a21;
-      --accent-red: #ef4444;
-      --accent-crimson: #dc2626;
-    }
     * {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
     body {
-      background-color: var(--bg-oled);
+      background-color: #000000;
       color: #f5f5f7;
       padding-top: env(safe-area-inset-top);
       padding-bottom: calc(92px + env(safe-area-inset-bottom));
       overscroll-behavior-y: contain;
     }
-    button, nav {
-      user-select: none;
-      -webkit-user-select: none;
-    }
+    button, nav { user-select: none; -webkit-user-select: none; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
     .ios-card {
       background: linear-gradient(180deg, #161820 0%, #101116 100%);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -60,7 +51,6 @@
       border-color: #ef4444;
       box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
     }
-    /* Custom sleek iOS range slider */
     input[type="range"].ios-slider {
       -webkit-appearance: none;
       appearance: none;
@@ -82,7 +72,7 @@
       cursor: pointer;
     }
     .ios-tab-bar {
-      background: rgba(12, 13, 17, 0.84);
+      background: rgba(12, 13, 17, 0.86);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border-top: 0.5px solid rgba(255, 255, 255, 0.12);
@@ -103,57 +93,61 @@
 </head>
 <body class="min-h-screen antialiased selection:bg-red-500/30">
 
-  <!-- Native iOS-style Large Header -->
-  <header class="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-white/[0.07]">
-    <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-500/25 to-red-900/20 border border-red-500/40 flex items-center justify-center shadow-inner">
-          <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h3l3-7 4 14 3-9 2 2h3" />
-          </svg>
+  <!-- Sticky Header + Horizontal Date Strip -->
+  <header class="sticky top-0 z-30 bg-black/85 backdrop-blur-xl border-b border-white/[0.08]">
+    <div class="max-w-xl mx-auto px-4 pt-3 pb-2 space-y-2.5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-red-500/25 to-red-900/20 border border-red-500/40 flex items-center justify-center">
+            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h3l3-7 4 14 3-9 2 2h3" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-[17px] font-bold tracking-tight text-white leading-tight">WOD Tracker</h1>
+            <p class="text-[11px] text-zinc-400 font-medium" id="headerSubtitle">Кроссфит • Еда • Восстановление</p>
+          </div>
         </div>
-        <div>
-          <h1 class="text-[17px] font-bold tracking-tight text-white leading-tight">WOD Tracker</h1>
-          <p class="text-[11px] text-zinc-400 font-medium" id="headerSubtitle">Кроссфит • Еда • Самочувствие</p>
-        </div>
+        <button id="quickCopyBtn" type="button" class="px-3.5 py-2 rounded-full bg-red-500/15 hover:bg-red-500/25 border border-red-500/35 text-red-400 text-xs font-semibold transition active:scale-95 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          <span>Отчёт</span>
+        </button>
       </div>
-      <button id="quickCopyBtn" type="button" class="px-3.5 py-2 rounded-full bg-red-500/15 hover:bg-red-500/25 border border-red-500/35 text-red-400 text-xs font-semibold transition active:scale-95 flex items-center gap-1.5">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-        <span>Отчёт</span>
-      </button>
+
+      <!-- Native Horizontal Date Strip -->
+      <div id="dateStrip" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1"></div>
     </div>
   </header>
 
-  <main class="max-w-xl mx-auto px-4 pt-4 space-y-4">
+  <main class="max-w-xl mx-auto px-4 pt-3.5 space-y-4">
 
-    <!-- Apple Fitness Style Summary Strip -->
+    <!-- Summary Strip with Delta -->
     <section class="grid grid-cols-3 gap-2.5">
-      <div class="ios-card rounded-2xl p-3.5">
+      <div class="ios-card rounded-2xl p-3">
         <div class="text-[11px] text-zinc-400 font-medium">Вес</div>
         <div class="text-[19px] font-bold text-white tracking-tight mt-0.5 tabular-nums" id="statLastWeight">—</div>
         <div class="text-[10px] text-red-400 font-medium mt-0.5 tabular-nums" id="statWeightAvg">7д ср: —</div>
       </div>
-      <div class="ios-card rounded-2xl p-3.5">
+      <div class="ios-card rounded-2xl p-3">
         <div class="text-[11px] text-zinc-400 font-medium">Тренировок</div>
         <div class="text-[19px] font-bold text-white tracking-tight mt-0.5 tabular-nums" id="statWorkoutsCount">0</div>
         <div class="text-[10px] text-zinc-400 mt-0.5 truncate" id="statLastWorkout">Нет записей</div>
       </div>
-      <div class="ios-card rounded-2xl p-3.5">
-        <div class="text-[11px] text-zinc-400 font-medium">Ккал сегодня</div>
+      <div class="ios-card rounded-2xl p-3">
+        <div class="text-[11px] text-zinc-400 font-medium">Ккал за день</div>
         <div class="text-[19px] font-bold text-white tracking-tight mt-0.5 tabular-nums" id="statTodayKcal">0</div>
         <div class="text-[10px] text-red-400 font-medium mt-0.5 tabular-nums" id="statTodayProtein">Белок: 0 г</div>
       </div>
     </section>
 
-    <!-- VIEW 1: MORNING CHECK-IN -->
+    <!-- VIEW 1: MORNING CHECK-IN (NO FORM CLUTTER) -->
     <section id="view-morning" class="space-y-4">
-      <div class="ios-card rounded-3xl p-5 space-y-5">
+      <div class="ios-card rounded-3xl p-5 space-y-4">
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-lg font-bold tracking-tight text-white">Утренний чек-ин</h2>
-            <p class="text-xs text-zinc-400 mt-0.5">Фиксация веса и готовности к нагрузке</p>
+            <p class="text-xs text-zinc-400 mt-0.5" id="morningDateText">Сегодня</p>
           </div>
-          <!-- Readiness Ring -->
           <div class="relative w-12 h-12 flex items-center justify-center">
             <svg class="w-12 h-12 -rotate-90" viewBox="0 0 48 48">
               <circle cx="24" cy="24" r="19" fill="none" stroke="#22242d" stroke-width="4.5" />
@@ -166,90 +160,90 @@
         <form id="morningForm" class="space-y-4">
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label for="mDate" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Дата</label>
-              <input id="mDate" type="date" required class="input-ios w-full rounded-2xl px-3.5 py-3 text-sm font-medium" />
+              <label for="mWeight" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Вес (кг)</label>
+              <div class="flex items-center gap-1.5">
+                <button type="button" id="weightMinusBtn" class="w-10 h-11 rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">−</button>
+                <input id="mWeight" type="number" step="0.1" min="30" max="250" value="85.4" required class="input-ios w-full rounded-2xl px-1 py-2.5 text-center text-base font-bold tabular-nums" />
+                <button type="button" id="weightPlusBtn" class="w-10 h-11 rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">+</button>
+              </div>
             </div>
             <div>
-              <label for="mWeight" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Вес утром (кг)</label>
+              <label for="mSleepHours" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Сон (ч)</label>
               <div class="flex items-center gap-1.5">
-                <button type="button" id="weightMinusBtn" class="w-10 h-[46px] rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">−</button>
-                <input id="mWeight" type="number" step="0.1" min="30" max="250" value="85.4" required class="input-ios w-full rounded-2xl px-2 py-3 text-center text-sm font-bold tabular-nums" />
-                <button type="button" id="weightPlusBtn" class="w-10 h-[46px] rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">+</button>
+                <button type="button" id="sleepMinusBtn" class="w-10 h-11 rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">−</button>
+                <input id="mSleepHours" type="number" step="0.5" min="0" max="16" value="6.5" required class="input-ios w-full rounded-2xl px-1 py-2.5 text-center text-base font-bold tabular-nums" />
+                <button type="button" id="sleepPlusBtn" class="w-10 h-11 rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">+</button>
               </div>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="ios-subcard rounded-2xl p-3.5 space-y-3.5">
             <div>
-              <label for="mSleepHours" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Сон (часов)</label>
-              <div class="flex items-center gap-1.5">
-                <button type="button" id="sleepMinusBtn" class="w-10 h-[46px] rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">−</button>
-                <input id="mSleepHours" type="number" step="0.5" min="0" max="16" value="6.5" required class="input-ios w-full rounded-2xl px-2 py-3 text-center text-sm font-bold tabular-nums" />
-                <button type="button" id="sleepPlusBtn" class="w-10 h-[46px] rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">+</button>
-              </div>
-            </div>
-            <div class="ios-subcard rounded-2xl px-3.5 py-2.5 flex flex-col justify-center">
-              <div class="flex justify-between text-[11px] text-zinc-400 mb-2">
+              <div class="flex justify-between text-xs text-zinc-300 mb-1.5">
                 <label for="mSleepQuality" class="font-medium">Качество сна</label>
                 <span class="text-red-400 font-bold tabular-nums" id="mSleepQualityVal">7/10</span>
               </div>
               <input id="mSleepQuality" type="range" min="1" max="10" value="7" class="ios-slider" />
             </div>
-          </div>
-
-          <div class="ios-subcard rounded-2xl p-3.5 space-y-4">
             <div>
-              <div class="flex justify-between text-xs text-zinc-300 mb-2">
+              <div class="flex justify-between text-xs text-zinc-300 mb-1.5">
                 <label for="mEnergy" class="font-medium">Энергия и бодрость</label>
                 <span class="text-red-400 font-bold tabular-nums" id="mEnergyVal">7/10</span>
               </div>
               <input id="mEnergy" type="range" min="1" max="10" value="7" class="ios-slider" />
             </div>
-
             <div>
-              <div class="flex justify-between text-xs text-zinc-300 mb-2">
-                <label for="mRecovery" class="font-medium">Восстановление мышц (10 = свежий)</label>
+              <div class="flex justify-between text-xs text-zinc-300 mb-1.5">
+                <label for="mRecovery" class="font-medium">Восстановление мышц</label>
                 <span class="text-red-400 font-bold tabular-nums" id="mRecoveryVal">7/10</span>
               </div>
               <input id="mRecovery" type="range" min="1" max="10" value="7" class="ios-slider" />
             </div>
           </div>
 
-          <div>
-            <label for="mNote" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Утреннее самочувствие (опционально)</label>
-            <input id="mNote" type="text" placeholder="Например: немного забиты ноги после приседа" class="input-ios w-full rounded-2xl px-3.5 py-3 text-sm" />
+          <!-- WHOOP-style Quick Morning Tags -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-medium text-zinc-400">Самочувствие в 1 тап</span>
+              <button type="button" id="toggleMorningNoteBtn" class="text-[11px] text-red-400 font-semibold">+ Заметка</button>
+            </div>
+            <div id="morningTagsWrap" class="flex flex-wrap gap-1.5"></div>
+            <input id="mNote" type="text" placeholder="Короткая заметка..." class="hidden input-ios w-full rounded-2xl px-3.5 py-2.5 text-sm" />
           </div>
 
           <button type="submit" class="red-glow-btn w-full py-3.5 rounded-2xl text-white font-bold text-sm tracking-tight transition active:scale-[0.98]">
-            Сохранить утренний чек-ин
+            Сохранить чек-ин
           </button>
         </form>
       </div>
     </section>
 
-    <!-- VIEW 2: WORKOUT LOG + CIRCULAR WOD TIMER -->
+    <!-- VIEW 2: WORKOUT LOG + FULLSCREEN WOD TIMER + SMART WEIGHT HINTS -->
     <section id="view-workout" class="hidden space-y-4">
 
-      <!-- Native Circular WOD Timer Card -->
+      <!-- WOD Timer Card -->
       <div class="ios-card rounded-3xl p-5 space-y-4">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between gap-2">
           <div>
             <h2 class="text-base font-bold text-white">WOD Таймер</h2>
             <p class="text-[11px] text-red-400 font-semibold uppercase tracking-wider mt-0.5" id="timerStatusLabel">Готов • E2:30 (6 рд)</p>
           </div>
-          <button id="timerMuteBtn" type="button" class="text-[11px] px-3 py-1.5 rounded-full bg-white/[0.06] text-zinc-300 border border-white/10 font-medium active:scale-95 transition">
-            Звук: ВКЛ
-          </button>
+          <div class="flex items-center gap-1.5">
+            <button id="timerMuteBtn" type="button" class="text-[11px] px-2.5 py-1.5 rounded-full bg-white/[0.06] text-zinc-300 border border-white/10 font-medium active:scale-95 transition">
+              Звук: ВКЛ
+            </button>
+            <button id="timerFullscreenBtn" type="button" class="text-[11px] px-3 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/35 font-semibold active:scale-95 transition">
+              На весь экран
+            </button>
+          </div>
         </div>
 
-        <!-- iOS Segmented Control -->
         <div class="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-[#090a0d] border border-white/[0.07] text-xs">
           <button type="button" data-tmode="e230" class="tmode-btn py-2 rounded-xl bg-red-600 text-white font-bold shadow">Каждые 2:30</button>
           <button type="button" data-tmode="amrap" class="tmode-btn py-2 rounded-xl text-zinc-400 font-semibold">AMRAP 15:00</button>
           <button type="button" data-tmode="fortime" class="tmode-btn py-2 rounded-xl text-zinc-400 font-semibold">Секундомер</button>
         </div>
 
-        <!-- Timer Config -->
         <div id="timerConfigRow" class="grid grid-cols-2 gap-2.5 text-xs">
           <div id="timerIntervalWrap">
             <label for="timerIntervalSec" class="block text-[11px] text-zinc-400 mb-1">Интервал (сек)</label>
@@ -265,27 +259,24 @@
           </div>
         </div>
 
-        <!-- Circular Timer Ring + Tap Round Counter -->
         <div class="ios-subcard rounded-3xl p-4 flex items-center justify-between gap-3">
-          <div class="relative w-32 h-32 flex items-center justify-center shrink-0">
-            <svg class="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
+          <div class="relative w-28 h-28 flex items-center justify-center shrink-0">
+            <svg class="w-28 h-28 -rotate-90" viewBox="0 0 120 120">
               <circle cx="60" cy="60" r="52" fill="none" stroke="#1f212b" stroke-width="8" />
               <circle id="timerProgressRing" cx="60" cy="60" r="52" fill="none" stroke="#ef4444" stroke-width="8" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="0" style="transition: stroke-dashoffset 0.35s linear;" />
             </svg>
             <div class="absolute text-center">
-              <div class="text-2xl font-extrabold tracking-tight text-white tabular-nums" id="timerDisplay">02:30</div>
-              <div class="text-[10px] text-zinc-400 font-medium mt-0.5">время</div>
+              <div class="text-xl font-extrabold tracking-tight text-white tabular-nums" id="timerDisplay">02:30</div>
             </div>
           </div>
 
-          <button id="roundPlusBtn" type="button" class="flex-1 h-32 rounded-2xl bg-gradient-to-b from-red-600/20 to-red-950/20 hover:from-red-600/30 border border-red-500/35 flex flex-col items-center justify-center active:scale-95 transition">
-            <span class="text-[11px] text-red-300 font-semibold uppercase tracking-wider">Раунды</span>
-            <span class="text-4xl font-extrabold text-white tabular-nums my-1" id="roundCounterVal">0</span>
-            <span class="text-xs text-red-400 font-bold">+1 раунд</span>
+          <button id="roundPlusBtn" type="button" class="flex-1 h-28 rounded-2xl bg-gradient-to-b from-red-600/20 to-red-950/20 hover:from-red-600/30 border border-red-500/35 flex flex-col items-center justify-center active:scale-95 transition">
+            <span class="text-[10px] text-red-300 font-semibold uppercase tracking-wider">Раунды / Сплит</span>
+            <span class="text-3xl font-extrabold text-white tabular-nums my-0.5" id="roundCounterVal">0</span>
+            <span class="text-[11px] text-red-400 font-bold">+1 раунд</span>
           </button>
         </div>
 
-        <!-- Controls -->
         <div class="grid grid-cols-3 gap-2">
           <button id="timerStartBtn" type="button" class="red-glow-btn py-3 rounded-2xl text-white text-xs font-bold transition active:scale-95">
             Старт
@@ -303,79 +294,69 @@
       <div class="ios-card rounded-3xl p-5 space-y-4">
         <div class="flex items-center justify-between">
           <h2 class="text-base font-bold text-white">Запись комплекса</h2>
-          <span class="text-[11px] px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/25 font-semibold">WOD + Итог</span>
+          <span class="text-xs text-zinc-400 font-medium" id="workoutDateText">Сегодня</span>
         </div>
 
         <form id="workoutForm" class="space-y-4">
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label for="wDate" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Дата</label>
-              <input id="wDate" type="date" required class="input-ios w-full rounded-2xl px-3.5 py-3 text-sm" />
-            </div>
-            <div>
-              <label for="wFormat" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Формат</label>
-              <select id="wFormat" class="input-ios w-full rounded-2xl px-3 py-3 text-sm font-medium">
-                <option value="E2:30OM (каждые 2:30)">E2:30OM (каждые 2:30)</option>
-                <option value="AMRAP 15 мин">AMRAP 15 мин</option>
-                <option value="For Time">For Time</option>
-                <option value="EMOM">EMOM</option>
-                <option value="Силовая + WOD">Силовая + WOD</option>
-                <option value="Другое">Другое</option>
-              </select>
-            </div>
+          <!-- Tactile Format Chips (No native <select>) -->
+          <div class="space-y-1.5">
+            <span class="block text-[11px] font-medium text-zinc-400">Формат</span>
+            <div id="formatChipsWrap" class="flex flex-wrap gap-1.5"></div>
           </div>
 
           <div>
-            <label for="wTitle" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Задание комплекса</label>
-            <textarea id="wTitle" rows="3" required placeholder="Например: Каждые 2:30 x 6 раундов: 10 махов гирей 16 кг, 10 швунгов гантелей 12.5 кг, 12 кал гребля" class="input-ios w-full rounded-2xl px-3.5 py-3 text-sm leading-relaxed"></textarea>
+            <label for="wTitle" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Комплекс (можно вставить из ветки)</label>
+            <textarea id="wTitle" rows="2" required placeholder="Вставьте задание WOD..." class="input-ios w-full rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed"></textarea>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label for="wResult" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Результат</label>
-              <input id="wResult" type="text" required placeholder="6 раундов / 14:25" class="input-ios w-full rounded-2xl px-3.5 py-3 text-sm font-bold" />
+              <input id="wResult" type="text" required placeholder="6 рд / 14:25" class="input-ios w-full rounded-2xl px-3.5 py-2.5 text-sm font-bold" />
             </div>
             <div>
               <label for="wDuration" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Длительность (мин)</label>
-              <input id="wDuration" type="number" min="1" max="240" placeholder="60" class="input-ios w-full rounded-2xl px-3.5 py-3 text-sm" />
+              <input id="wDuration" type="number" min="1" max="240" placeholder="60" class="input-ios w-full rounded-2xl px-3.5 py-2.5 text-sm" />
             </div>
           </div>
 
-          <!-- Dynamic Exercises -->
+          <!-- Dynamic Exercises with SugarWOD-style Past Weight Hint -->
           <div class="space-y-2 pt-1">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-zinc-300">Рабочие веса и упражнения</span>
+              <span class="text-xs font-semibold text-zinc-300">Рабочие веса</span>
               <button type="button" id="addExerciseBtn" class="text-xs font-semibold text-red-400 hover:text-red-300 py-1 px-2.5 rounded-full bg-red-500/15">
                 + Добавить упражнение
               </button>
             </div>
-            <div id="exerciseList" class="space-y-2"></div>
+            <div id="exerciseList" class="space-y-2.5"></div>
           </div>
 
-          <!-- Post-Workout Feedback -->
+          <!-- Post-Workout Feedback with Quick Tags -->
           <div class="ios-subcard rounded-2xl p-4 space-y-3.5">
-            <h3 class="text-sm font-bold text-white">Обратная связь после тренировки</h3>
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-white">Обратная связь</h3>
+              <button type="button" id="toggleWorkoutNoteBtn" class="text-[11px] text-red-400 font-semibold">+ Заметка</button>
+            </div>
 
-            <div>
-              <div class="flex justify-between text-xs text-zinc-300 mb-2">
-                <label for="wRpe" class="font-medium">Тяжесть нагрузки (RPE)</label>
-                <span class="text-red-400 font-bold tabular-nums" id="wRpeVal">8/10</span>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <div class="flex justify-between text-xs text-zinc-300 mb-1.5">
+                  <label for="wRpe" class="font-medium">RPE</label>
+                  <span class="text-red-400 font-bold tabular-nums" id="wRpeVal">8/10</span>
+                </div>
+                <input id="wRpe" type="range" min="1" max="10" value="8" class="ios-slider" />
               </div>
-              <input id="wRpe" type="range" min="1" max="10" value="8" class="ios-slider" />
-            </div>
-
-            <div>
-              <div class="flex justify-between text-xs text-zinc-300 mb-2">
-                <label for="wFeeling" class="font-medium">Самочувствие после (10 = отлично)</label>
-                <span class="text-red-400 font-bold tabular-nums" id="wFeelingVal">8/10</span>
+              <div>
+                <div class="flex justify-between text-xs text-zinc-300 mb-1.5">
+                  <label for="wFeeling" class="font-medium">Состояние</label>
+                  <span class="text-red-400 font-bold tabular-nums" id="wFeelingVal">8/10</span>
+                </div>
+                <input id="wFeeling" type="range" min="1" max="10" value="8" class="ios-slider" />
               </div>
-              <input id="wFeeling" type="range" min="1" max="10" value="8" class="ios-slider" />
             </div>
 
-            <div>
-              <label for="wFeedback" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Заметка / обратная связь</label>
-              <textarea id="wFeedback" rows="2" placeholder="Например: уложился в 1:40 из 2:30, запас 50 сек, техника стабильная" class="input-ios w-full rounded-2xl px-3.5 py-2.5 text-sm"></textarea>
-            </div>
+            <div id="workoutTagsWrap" class="flex flex-wrap gap-1.5"></div>
+            <textarea id="wFeedback" rows="2" placeholder="Дополнительный комментарий..." class="hidden input-ios w-full rounded-2xl px-3.5 py-2.5 text-sm"></textarea>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
@@ -398,14 +379,14 @@
             <h2 class="text-lg font-bold text-white">Питание за день</h2>
             <p class="text-xs text-zinc-400" id="foodDateLabel">Сегодня</p>
           </div>
-          <input id="fDate" type="date" class="input-ios rounded-xl px-3 py-2 text-xs font-medium" />
+          <span class="text-xs font-bold text-red-400">Цель: 2000 ккал</span>
         </div>
 
         <div class="grid grid-cols-4 gap-2 text-center">
           <div class="ios-subcard rounded-2xl p-2.5">
             <div class="text-[10px] text-zinc-400 font-medium">Ккал</div>
             <div class="text-base font-bold text-white mt-0.5 tabular-nums" id="macroKcal">0</div>
-            <div class="text-[9px] text-red-400 font-semibold" id="goalKcalLabel">/ 2000</div>
+            <div class="text-[9px] text-red-400 font-semibold">/ 2000</div>
           </div>
           <div class="ios-subcard rounded-2xl p-2.5">
             <div class="text-[10px] text-zinc-400 font-medium">Белки</div>
@@ -431,14 +412,11 @@
 
       <div class="ios-card rounded-3xl p-5 space-y-3.5">
         <div class="flex items-center justify-between">
-          <h3 class="text-sm font-bold text-white">Умный ввод еды</h3>
+          <h3 class="text-sm font-bold text-white">Добавить приём пищи</h3>
           <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold">Авто-КБЖУ</span>
         </div>
-        <p class="text-[11px] text-zinc-400 leading-relaxed">
-          Напишите продукты через запятую, например: <span class="text-zinc-200">курица 200г, рис 150г, огурец 100г</span>.
-        </p>
 
-        <textarea id="foodSmartInput" rows="2" placeholder="куриная грудка 200г, гречка 150г, яйцо 2 шт" class="input-ios w-full rounded-2xl px-3.5 py-3 text-sm"></textarea>
+        <textarea id="foodSmartInput" rows="2" placeholder="куриная грудка 200г, гречка 150г, яйцо 2 шт" class="input-ios w-full rounded-2xl px-3.5 py-2.5 text-sm"></textarea>
         <div class="grid grid-cols-2 gap-2">
           <button id="parseFoodBtn" type="button" class="red-glow-btn py-3 rounded-2xl text-white text-xs font-bold transition active:scale-95">
             Распознать и добавить
@@ -468,7 +446,7 @@
       </div>
 
       <div class="ios-card rounded-3xl p-5 space-y-2.5">
-        <h3 class="text-sm font-bold text-white">Съедено за выбранную дату</h3>
+        <h3 class="text-sm font-bold text-white">Съедено за дату</h3>
         <div id="foodDayList" class="space-y-2"></div>
       </div>
     </section>
@@ -524,6 +502,47 @@
     </section>
 
   </main>
+
+  <!-- Fullscreen Gym Timer Overlay (OLED + Splits + Wake Lock) -->
+  <div id="fullscreenTimerOverlay" class="hidden fixed inset-0 z-50 bg-black flex flex-col justify-between p-5" style="padding-top: calc(20px + env(safe-area-inset-top)); padding-bottom: calc(24px + env(safe-area-inset-bottom));">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-xs font-bold uppercase tracking-widest text-red-500" id="fsStatusLabel">WOD РЕЖИМ</div>
+        <div class="text-[11px] text-zinc-400 mt-0.5" id="fsWakeLockLabel">Экран не гаснет</div>
+      </div>
+      <button id="fsCloseBtn" type="button" class="px-4 py-2 rounded-full bg-white/10 text-white text-xs font-semibold">Свернуть</button>
+    </div>
+
+    <div class="flex flex-col items-center justify-center my-auto space-y-5">
+      <div class="relative w-60 h-60 flex items-center justify-center">
+        <svg class="w-60 h-60 -rotate-90" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#1a1b22" stroke-width="6.5" />
+          <circle id="fsProgressRing" cx="60" cy="60" r="52" fill="none" stroke="#ef4444" stroke-width="6.5" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="0" style="transition: stroke-dashoffset 0.35s linear;" />
+        </svg>
+        <div class="absolute text-center">
+          <div class="text-6xl font-extrabold tracking-tight text-white tabular-nums" id="fsTimerDisplay">02:30</div>
+          <div class="text-xs text-zinc-400 font-semibold mt-1" id="fsRoundText">Раунд 0</div>
+        </div>
+      </div>
+
+      <!-- Huge Tap Split / Round Button -->
+      <button id="fsSplitBtn" type="button" class="w-full max-w-sm py-5 rounded-3xl bg-gradient-to-r from-red-600 to-red-700 text-white font-extrabold text-lg tracking-tight shadow-2xl active:scale-95 transition">
+        +1 РАУНД / СПЛИТ
+      </button>
+
+      <!-- Live Splits List -->
+      <div id="fsSplitsList" class="w-full max-w-sm max-h-28 overflow-y-auto space-y-1 text-xs text-zinc-300 px-1"></div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 max-w-sm mx-auto w-full">
+      <button id="fsStartPauseBtn" type="button" class="py-3.5 rounded-2xl bg-white/12 text-white font-bold text-sm active:scale-95 transition">
+        Старт
+      </button>
+      <button id="fsFinishBtn" type="button" class="py-3.5 rounded-2xl bg-red-600/25 border border-red-500/40 text-red-300 font-bold text-sm active:scale-95 transition">
+        Завершить → В итог
+      </button>
+    </div>
+  </div>
 
   <!-- Native iOS Frosted Tab Bar -->
   <nav class="ios-tab-bar fixed bottom-0 left-0 right-0 z-40">
@@ -582,6 +601,10 @@
     let weightChartInstance = null;
     let pendingDeleteId = null;
     let pendingClearAll = false;
+    let selectedDate = "";
+    let selectedFormat = "E2:30OM (каждые 2:30)";
+    let selectedMorningTags = new Set();
+    let selectedWorkoutTags = new Set();
 
     function todayISO() {
       const d = new Date();
@@ -594,28 +617,37 @@
       return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split("T")[0];
     }
 
+    function formatRuShort(iso) {
+      if (iso === todayISO()) return "Сегодня";
+      if (iso === dateOffsetISO(1)) return "Вчера";
+      const [y, m, d] = iso.split("-");
+      return `${d}.${m}.${y}`;
+    }
+
     function getDemoData() {
       return {
         mornings: [
-          { id: "m_demo_1", date: dateOffsetISO(4), weight: 86.2, sleepHours: 6.0, sleepQuality: 6, energy: 6, recovery: 7, note: "Лёгкая усталость" },
-          { id: "m_demo_2", date: dateOffsetISO(2), weight: 85.8, sleepHours: 6.5, sleepQuality: 7, energy: 7, recovery: 8, note: "Бодрое утро" },
-          { id: "m_demo_3", date: todayISO(), weight: 85.4, sleepHours: 7.0, sleepQuality: 8, energy: 8, recovery: 8, note: "Готов к комплексу" }
+          { id: "m_demo_1", date: dateOffsetISO(4), weight: 86.2, sleepHours: 6.0, sleepQuality: 6, energy: 6, recovery: 7, tags: ["Недосып"], note: "" },
+          { id: "m_demo_2", date: dateOffsetISO(2), weight: 85.8, sleepHours: 6.5, sleepQuality: 7, energy: 7, recovery: 8, tags: ["Бодрое утро"], note: "" },
+          { id: "m_demo_3", date: todayISO(), weight: 85.4, sleepHours: 7.0, sleepQuality: 8, energy: 8, recovery: 8, tags: ["Готов к PR"], note: "" }
         ],
         workouts: [
           {
             id: "w_demo_1",
             date: dateOffsetISO(2),
             format: "E2:30OM (каждые 2:30)",
-            title: "Каждые 2:30 x 6 раундов: 10 махов гирей 16 кг, 10 швунгов гантелей 12.5 кг, 12 кал гребля",
+            title: "Каждые 2:30 x 6 раундов: 10 махов гирей, 10 швунгов гантелей, 12 кал гребля",
             result: "6 раундов (средн. 1:42)",
             duration: 55,
             exercises: [
               { name: "Махи гирей", weight: "16 кг", reps: "10" },
               { name: "Швунги гантелей", weight: "12.5 кг", reps: "10" }
             ],
+            splits: ["01:38", "01:40", "01:42", "01:44", "01:45", "01:43"],
             rpe: 8,
             feeling: 8,
-            feedback: "Ровный темп, на каждом интервале оставалось 45–50 сек отдыха."
+            tags: ["Ровный темп", "Техника ок"],
+            feedback: ""
           }
         ],
         foods: [
@@ -648,7 +680,7 @@
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch (e) {
-        showToast("Не удалось сохранить в память браузера", "error");
+        showToast("Не удалось сохранить", "error");
       }
     }
 
@@ -663,11 +695,7 @@
     }
 
     function escapeHtml(str) {
-      return String(str || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
+      return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
     function copyTextToClipboard(text) {
@@ -694,6 +722,93 @@
       }
       document.body.removeChild(ta);
     }
+
+    // --- Horizontal 10-Day Date Strip ---
+    const WEEKDAYS = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+    function renderDateStrip() {
+      const strip = document.getElementById("dateStrip");
+      strip.innerHTML = "";
+      for (let i = 9; i >= 0; i--) {
+        const iso = dateOffsetISO(i);
+        const dObj = new Date(iso + "T12:00:00");
+        const dayNum = dObj.getDate();
+        const wd = i === 0 ? "Сег" : WEEKDAYS[dObj.getDay()];
+        const active = iso === selectedDate;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = active
+          ? "shrink-0 w-12 py-1.5 rounded-2xl bg-red-600 text-white flex flex-col items-center shadow-lg transition active:scale-95"
+          : "shrink-0 w-12 py-1.5 rounded-2xl bg-white/[0.05] text-zinc-400 hover:bg-white/10 flex flex-col items-center transition active:scale-95";
+        btn.innerHTML = `<span class="text-[10px] font-medium">${wd}</span><span class="text-sm font-bold tabular-nums">${dayNum}</span>`;
+        btn.addEventListener("click", () => {
+          selectedDate = iso;
+          renderDateStrip();
+          document.getElementById("morningDateText").textContent = formatRuShort(iso);
+          document.getElementById("workoutDateText").textContent = formatRuShort(iso);
+          renderFoodDay();
+          renderStats();
+        });
+        strip.appendChild(btn);
+      }
+      strip.scrollLeft = strip.scrollWidth;
+    }
+
+    // --- WHOOP-style Tag Chips ---
+    const MORNING_TAGS = ["Бодрое утро", "Недосып", "Крепатура ног", "Поясница", "Поздний кофе", "Стресс", "Готов к PR"];
+    const WORKOUT_TAGS = ["Ровный темп", "Просел хват", "Сбилось дыхание", "Техника ок", "Запас сил", "На пределе"];
+
+    function renderTagChips(containerId, list, selectedSet) {
+      const wrap = document.getElementById(containerId);
+      wrap.innerHTML = "";
+      list.forEach((tag) => {
+        const active = selectedSet.has(tag);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = active
+          ? "text-[11px] px-3 py-1.5 rounded-full bg-red-600 text-white font-semibold transition active:scale-95"
+          : "text-[11px] px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/10 text-zinc-300 font-medium transition active:scale-95";
+        btn.textContent = tag;
+        btn.addEventListener("click", () => {
+          if (selectedSet.has(tag)) selectedSet.delete(tag);
+          else selectedSet.add(tag);
+          renderTagChips(containerId, list, selectedSet);
+        });
+        wrap.appendChild(btn);
+      });
+    }
+
+    // --- Format Chips ---
+    const FORMAT_OPTIONS = ["E2:30OM (каждые 2:30)", "AMRAP 15 мин", "For Time", "EMOM", "Силовая + WOD"];
+    function renderFormatChips() {
+      const wrap = document.getElementById("formatChipsWrap");
+      wrap.innerHTML = "";
+      FORMAT_OPTIONS.forEach((fmt) => {
+        const active = fmt === selectedFormat;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = active
+          ? "text-xs px-3 py-1.5 rounded-full bg-red-600 text-white font-bold shadow transition active:scale-95"
+          : "text-xs px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/10 text-zinc-300 font-medium transition active:scale-95";
+        btn.textContent = fmt;
+        btn.addEventListener("click", () => {
+          selectedFormat = fmt;
+          renderFormatChips();
+        });
+        wrap.appendChild(btn);
+      });
+    }
+
+    // --- Toggle Optional Notes ---
+    document.getElementById("toggleMorningNoteBtn").addEventListener("click", () => {
+      const el = document.getElementById("mNote");
+      el.classList.toggle("hidden");
+      if (!el.classList.contains("hidden")) el.focus();
+    });
+    document.getElementById("toggleWorkoutNoteBtn").addEventListener("click", () => {
+      const el = document.getElementById("wFeedback");
+      el.classList.toggle("hidden");
+      if (!el.classList.contains("hidden")) el.focus();
+    });
 
     // --- Stepper Buttons & Readiness Ring ---
     function updateReadinessRing() {
@@ -760,7 +875,7 @@
       });
     });
 
-    // --- Circular WOD Timer ---
+    // --- WOD Timer + Fullscreen + Splits + Wake Lock ---
     let timerMode = "e230";
     let timerRunning = false;
     let timerHandle = null;
@@ -768,9 +883,29 @@
     let audioCtx = null;
     let roundCount = 0;
     let elapsedSec = 0;
+    let lastSplitElapsed = 0;
+    let splits = [];
     let currentRoundIdx = 1;
     let roundRemainingSec = 150;
     let amrapRemainingSec = 900;
+    let wakeLock = null;
+
+    async function requestWakeLock() {
+      try {
+        if ("wakeLock" in navigator && !wakeLock) {
+          wakeLock = await navigator.wakeLock.request("screen");
+          document.getElementById("fsWakeLockLabel").textContent = "Экран не гаснет (активно)";
+        }
+      } catch (e) {
+        document.getElementById("fsWakeLockLabel").textContent = "Полноэкранный режим";
+      }
+    }
+
+    function releaseWakeLock() {
+      try {
+        if (wakeLock) { wakeLock.release(); wakeLock = null; }
+      } catch (e) {}
+    }
 
     function beep(freq = 880, dur = 0.14) {
       if (timerMuted) return;
@@ -795,99 +930,103 @@
 
     function fmtMMSS(sec) {
       const s = Math.max(0, Math.floor(sec));
-      const m = Math.floor(s / 60);
-      const r = s % 60;
-      return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
+      return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+    }
+
+    function renderSplits() {
+      const wrap = document.getElementById("fsSplitsList");
+      wrap.innerHTML = "";
+      [...splits].reverse().forEach((sp, idx) => {
+        const num = splits.length - idx;
+        const row = document.createElement("div");
+        row.className = "flex justify-between px-3 py-1 rounded-lg bg-white/[0.05]";
+        row.innerHTML = `<span class="text-zinc-400">Раунд ${num}</span><span class="font-bold text-white tabular-nums">${sp}</span>`;
+        wrap.appendChild(row);
+      });
+    }
+
+    function recordSplit() {
+      roundCount += 1;
+      const lap = elapsedSec - lastSplitElapsed;
+      lastSplitElapsed = elapsedSec;
+      splits.push(fmtMMSS(lap > 0 ? lap : elapsedSec));
+      document.getElementById("roundCounterVal").textContent = String(roundCount);
+      document.getElementById("fsRoundText").textContent = `Раунд ${roundCount}`;
+      renderSplits();
+      beep(740, 0.09);
     }
 
     function resetTimer() {
       if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
       timerRunning = false;
+      releaseWakeLock();
       document.getElementById("timerStartBtn").textContent = "Старт";
+      document.getElementById("fsStartPauseBtn").textContent = "Старт";
       elapsedSec = 0;
+      lastSplitElapsed = 0;
+      splits = [];
       currentRoundIdx = 1;
       const intervalSec = Math.max(10, parseInt(document.getElementById("timerIntervalSec").value || "150", 10));
       const totalRounds = Math.max(1, parseInt(document.getElementById("timerTotalRounds").value || "6", 10));
       const amrapMin = Math.max(1, parseInt(document.getElementById("timerAmrapMin").value || "15", 10));
       roundRemainingSec = intervalSec;
       amrapRemainingSec = amrapMin * 60;
+      renderSplits();
       updateTimerUI(totalRounds, intervalSec, amrapMin);
     }
 
     function updateTimerUI(totalRounds, intervalSec, amrapMin) {
       const disp = document.getElementById("timerDisplay");
+      const fsDisp = document.getElementById("fsTimerDisplay");
       const status = document.getElementById("timerStatusLabel");
+      const fsStatus = document.getElementById("fsStatusLabel");
       const ring = document.getElementById("timerProgressRing");
+      const fsRing = document.getElementById("fsProgressRing");
       const circ = 326.7;
       let pct = 1;
+      let timeText = "00:00";
+      let statusText = "";
 
       if (timerMode === "e230") {
-        disp.textContent = fmtMMSS(roundRemainingSec);
+        timeText = fmtMMSS(roundRemainingSec);
         pct = intervalSec > 0 ? roundRemainingSec / intervalSec : 1;
-        status.textContent = timerRunning
-          ? `Раунд ${currentRoundIdx} из ${totalRounds}`
-          : `Готов • Интервал ${fmtMMSS(intervalSec)} × ${totalRounds}`;
+        statusText = timerRunning ? `Раунд ${currentRoundIdx} из ${totalRounds}` : `Готов • Интервал ${fmtMMSS(intervalSec)} × ${totalRounds}`;
       } else if (timerMode === "amrap") {
-        disp.textContent = fmtMMSS(amrapRemainingSec);
+        timeText = fmtMMSS(amrapRemainingSec);
         const total = amrapMin * 60;
         pct = total > 0 ? amrapRemainingSec / total : 1;
-        status.textContent = timerRunning ? "AMRAP • Идёт работа" : `Готов • AMRAP ${amrapMin}:00`;
+        statusText = timerRunning ? "AMRAP • Идёт работа" : `Готов • AMRAP ${amrapMin}:00`;
       } else {
-        disp.textContent = fmtMMSS(elapsedSec);
+        timeText = fmtMMSS(elapsedSec);
         pct = (elapsedSec % 60) / 60;
-        status.textContent = timerRunning ? "Секундомер • В работе" : "Готов • For Time";
+        statusText = timerRunning ? "Секундомер • В работе" : "Готов • For Time";
       }
-      ring.setAttribute("stroke-dashoffset", String(circ * (1 - pct)));
+
+      disp.textContent = timeText;
+      fsDisp.textContent = timeText;
+      status.textContent = statusText;
+      fsStatus.textContent = statusText;
+      const offset = String(circ * (1 - pct));
+      ring.setAttribute("stroke-dashoffset", offset);
+      fsRing.setAttribute("stroke-dashoffset", offset);
+      document.getElementById("fsRoundText").textContent = `Раунд ${roundCount}`;
     }
 
-    document.querySelectorAll(".tmode-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        timerMode = btn.dataset.tmode;
-        document.querySelectorAll(".tmode-btn").forEach((b) => {
-          const active = b.dataset.tmode === timerMode;
-          b.className = active
-            ? "tmode-btn py-2 rounded-xl bg-red-600 text-white font-bold shadow"
-            : "tmode-btn py-2 rounded-xl text-zinc-400 font-semibold";
-        });
-        document.getElementById("timerIntervalWrap").classList.toggle("hidden", timerMode !== "e230");
-        document.getElementById("timerRoundsWrap").classList.toggle("hidden", timerMode !== "e230");
-        document.getElementById("timerAmrapWrap").classList.toggle("hidden", timerMode !== "amrap");
-        document.getElementById("timerConfigRow").classList.toggle("hidden", timerMode === "fortime");
-        resetTimer();
-      });
-    });
-
-    ["timerIntervalSec", "timerTotalRounds", "timerAmrapMin"].forEach((id) => {
-      document.getElementById(id).addEventListener("change", () => { if (!timerRunning) resetTimer(); });
-    });
-
-    document.getElementById("timerMuteBtn").addEventListener("click", () => {
-      timerMuted = !timerMuted;
-      document.getElementById("timerMuteBtn").textContent = timerMuted ? "Звук: ВЫКЛ" : "Звук: ВКЛ";
-    });
-
-    document.getElementById("roundPlusBtn").addEventListener("click", () => {
-      roundCount += 1;
-      document.getElementById("roundCounterVal").textContent = String(roundCount);
-    });
-
-    document.getElementById("timerResetBtn").addEventListener("click", () => {
-      roundCount = 0;
-      document.getElementById("roundCounterVal").textContent = "0";
-      resetTimer();
-    });
-
-    document.getElementById("timerStartBtn").addEventListener("click", () => {
+    function toggleTimerStart() {
       if (timerRunning) {
         clearInterval(timerHandle);
         timerHandle = null;
         timerRunning = false;
+        releaseWakeLock();
         document.getElementById("timerStartBtn").textContent = "Продолжить";
+        document.getElementById("fsStartPauseBtn").textContent = "Продолжить";
         return;
       }
       beep(980, 0.18);
       timerRunning = true;
+      requestWakeLock();
       document.getElementById("timerStartBtn").textContent = "Пауза";
+      document.getElementById("fsStartPauseBtn").textContent = "Пауза";
 
       const intervalSec = Math.max(10, parseInt(document.getElementById("timerIntervalSec").value || "150", 10));
       const totalRounds = Math.max(1, parseInt(document.getElementById("timerTotalRounds").value || "6", 10));
@@ -910,9 +1049,11 @@
               clearInterval(timerHandle);
               timerHandle = null;
               timerRunning = false;
+              releaseWakeLock();
               roundCount = totalRounds;
               document.getElementById("roundCounterVal").textContent = String(roundCount);
               document.getElementById("timerStartBtn").textContent = "Готово";
+              document.getElementById("fsStartPauseBtn").textContent = "Готово";
               beep(1200, 0.35);
               showToast("Интервалы завершены!");
             }
@@ -924,16 +1065,18 @@
             clearInterval(timerHandle);
             timerHandle = null;
             timerRunning = false;
+            releaseWakeLock();
             document.getElementById("timerStartBtn").textContent = "Готово";
+            document.getElementById("fsStartPauseBtn").textContent = "Готово";
             beep(1200, 0.35);
             showToast("Время AMRAP вышло!");
           }
         }
         updateTimerUI(totalRounds, intervalSec, amrapMin);
       }, 1000);
-    });
+    }
 
-    document.getElementById("timerApplyBtn").addEventListener("click", () => {
+    function applyTimerToResult() {
       const resInput = document.getElementById("wResult");
       const durInput = document.getElementById("wDuration");
       if (timerMode === "e230") {
@@ -945,21 +1088,114 @@
       }
       if (elapsedSec > 0) durInput.value = String(Math.max(1, Math.round(elapsedSec / 60)));
       showToast("Результат подставлен!");
+    }
+
+    document.querySelectorAll(".tmode-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        timerMode = btn.dataset.tmode;
+        document.querySelectorAll(".tmode-btn").forEach((b) => {
+          const active = b.dataset.tmode === timerMode;
+          b.className = active ? "tmode-btn py-2 rounded-xl bg-red-600 text-white font-bold shadow" : "tmode-btn py-2 rounded-xl text-zinc-400 font-semibold";
+        });
+        document.getElementById("timerIntervalWrap").classList.toggle("hidden", timerMode !== "e230");
+        document.getElementById("timerRoundsWrap").classList.toggle("hidden", timerMode !== "e230");
+        document.getElementById("timerAmrapWrap").classList.toggle("hidden", timerMode !== "amrap");
+        document.getElementById("timerConfigRow").classList.toggle("hidden", timerMode === "fortime");
+        resetTimer();
+      });
     });
 
-    // --- Dynamic Exercises ---
+    ["timerIntervalSec", "timerTotalRounds", "timerAmrapMin"].forEach((id) => {
+      document.getElementById(id).addEventListener("change", () => { if (!timerRunning) resetTimer(); });
+    });
+
+    document.getElementById("timerMuteBtn").addEventListener("click", () => {
+      timerMuted = !timerMuted;
+      document.getElementById("timerMuteBtn").textContent = timerMuted ? "Звук: ВЫКЛ" : "Звук: ВКЛ";
+    });
+    document.getElementById("roundPlusBtn").addEventListener("click", recordSplit);
+    document.getElementById("fsSplitBtn").addEventListener("click", recordSplit);
+    document.getElementById("timerStartBtn").addEventListener("click", toggleTimerStart);
+    document.getElementById("fsStartPauseBtn").addEventListener("click", toggleTimerStart);
+    document.getElementById("timerResetBtn").addEventListener("click", () => {
+      roundCount = 0;
+      document.getElementById("roundCounterVal").textContent = "0";
+      resetTimer();
+    });
+    document.getElementById("timerApplyBtn").addEventListener("click", applyTimerToResult);
+
+    document.getElementById("timerFullscreenBtn").addEventListener("click", () => {
+      document.getElementById("fullscreenTimerOverlay").classList.remove("hidden");
+      requestWakeLock();
+    });
+    document.getElementById("fsCloseBtn").addEventListener("click", () => {
+      document.getElementById("fullscreenTimerOverlay").classList.add("hidden");
+      if (!timerRunning) releaseWakeLock();
+    });
+    document.getElementById("fsFinishBtn").addEventListener("click", () => {
+      if (timerRunning) toggleTimerStart();
+      applyTimerToResult();
+      document.getElementById("fullscreenTimerOverlay").classList.add("hidden");
+      releaseWakeLock();
+    });
+
+    // --- SugarWOD-style Past Weight Lookup ---
+    function findLastExerciseMatch(query) {
+      const q = query.trim().toLowerCase();
+      if (q.length < 3) return null;
+      const sorted = [...state.workouts].sort((a, b) => b.date.localeCompare(a.date));
+      for (const w of sorted) {
+        if (!w.exercises) continue;
+        for (const ex of w.exercises) {
+          if (ex.name && ex.name.toLowerCase().includes(q) && (ex.weight || ex.reps)) {
+            return { weight: ex.weight, reps: ex.reps, date: w.date };
+          }
+        }
+      }
+      return null;
+    }
+
     function addExerciseRow(name = "", weight = "", reps = "") {
       const list = document.getElementById("exerciseList");
-      const row = document.createElement("div");
-      row.className = "exercise-row grid grid-cols-12 gap-2 items-center";
-      row.innerHTML = `
-        <input type="text" placeholder="Упражнение" value="${escapeHtml(name)}" class="ex-name input-ios col-span-5 rounded-xl px-2.5 py-2.5 text-xs" />
-        <input type="text" placeholder="Вес" value="${escapeHtml(weight)}" class="ex-weight input-ios col-span-3 rounded-xl px-2.5 py-2.5 text-xs" />
-        <input type="text" placeholder="Повт" value="${escapeHtml(reps)}" class="ex-reps input-ios col-span-3 rounded-xl px-2.5 py-2.5 text-xs" />
-        <button type="button" class="remove-ex col-span-1 h-9 rounded-xl bg-white/[0.06] hover:bg-red-500/20 text-zinc-400 hover:text-red-300 text-sm font-bold">×</button>
+      const wrap = document.createElement("div");
+      wrap.className = "exercise-row space-y-1";
+      wrap.innerHTML = `
+        <div class="grid grid-cols-12 gap-2 items-center">
+          <input type="text" placeholder="Упражнение" value="${escapeHtml(name)}" class="ex-name input-ios col-span-5 rounded-xl px-2.5 py-2.5 text-xs" />
+          <input type="text" placeholder="Вес" value="${escapeHtml(weight)}" class="ex-weight input-ios col-span-3 rounded-xl px-2.5 py-2.5 text-xs" />
+          <input type="text" placeholder="Повт" value="${escapeHtml(reps)}" class="ex-reps input-ios col-span-3 rounded-xl px-2.5 py-2.5 text-xs" />
+          <button type="button" class="remove-ex col-span-1 h-9 rounded-xl bg-white/[0.06] hover:bg-red-500/20 text-zinc-400 hover:text-red-300 text-sm font-bold">×</button>
+        </div>
+        <div class="ex-hint hidden flex items-center justify-between px-2 text-[11px] text-zinc-400">
+          <span class="ex-hint-text"></span>
+          <button type="button" class="ex-hint-apply text-red-400 font-semibold">Подставить</button>
+        </div>
       `;
-      row.querySelector(".remove-ex").addEventListener("click", () => row.remove());
-      list.appendChild(row);
+      const nameInput = wrap.querySelector(".ex-name");
+      const weightInput = wrap.querySelector(".ex-weight");
+      const repsInput = wrap.querySelector(".ex-reps");
+      const hintBox = wrap.querySelector(".ex-hint");
+      const hintText = wrap.querySelector(".ex-hint-text");
+      const hintApply = wrap.querySelector(".ex-hint-apply");
+
+      function updateHint() {
+        const match = findLastExerciseMatch(nameInput.value);
+        if (match) {
+          hintText.textContent = `Прошлый раз (${match.date.slice(5)}): ${match.weight || "—"} × ${match.reps || "—"}`;
+          hintBox.classList.remove("hidden");
+          hintApply.onclick = () => {
+            if (match.weight) weightInput.value = match.weight;
+            if (match.reps) repsInput.value = match.reps;
+          };
+        } else {
+          hintBox.classList.add("hidden");
+        }
+      }
+
+      nameInput.addEventListener("input", updateHint);
+      wrap.querySelector(".remove-ex").addEventListener("click", () => wrap.remove());
+      list.appendChild(wrap);
+      if (name) updateHint();
     }
     document.getElementById("addExerciseBtn").addEventListener("click", () => addExerciseRow());
 
@@ -968,12 +1204,13 @@
       e.preventDefault();
       const entry = {
         id: "m_" + Date.now(),
-        date: document.getElementById("mDate").value || todayISO(),
+        date: selectedDate || todayISO(),
         weight: parseFloat(document.getElementById("mWeight").value),
         sleepHours: parseFloat(document.getElementById("mSleepHours").value),
         sleepQuality: parseInt(document.getElementById("mSleepQuality").value, 10),
         energy: parseInt(document.getElementById("mEnergy").value, 10),
         recovery: parseInt(document.getElementById("mRecovery").value, 10),
+        tags: [...selectedMorningTags],
         note: document.getElementById("mNote").value.trim()
       };
       state.mornings.push(entry);
@@ -981,7 +1218,7 @@
       saveState();
       renderStats();
       document.getElementById("mNote").value = "";
-      showToast("Утренний чек-ин сохранён!");
+      showToast("Чек-ин сохранён!");
     });
 
     // --- Workout Save ---
@@ -995,14 +1232,16 @@
       });
       return {
         id: "w_" + Date.now(),
-        date: document.getElementById("wDate").value || todayISO(),
-        format: document.getElementById("wFormat").value,
+        date: selectedDate || todayISO(),
+        format: selectedFormat,
         title: document.getElementById("wTitle").value.trim(),
         result: document.getElementById("wResult").value.trim(),
         duration: document.getElementById("wDuration").value ? parseInt(document.getElementById("wDuration").value, 10) : null,
         exercises,
+        splits: [...splits],
         rpe: parseInt(document.getElementById("wRpe").value, 10),
         feeling: parseInt(document.getElementById("wFeeling").value, 10),
+        tags: [...selectedWorkoutTags],
         feedback: document.getElementById("wFeedback").value.trim()
       };
     }
@@ -1066,70 +1305,41 @@
       const parts = text.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
       let totalKcal = 0, totalP = 0, totalF = 0, totalC = 0;
       let matchedAny = false;
-
       parts.forEach((part) => {
         const lower = part.toLowerCase();
         const found = FOOD_DB.find((item) => item.keys.some((k) => lower.includes(k)));
         if (!found) return;
         matchedAny = true;
-
         const gMatch = lower.match(/(\d+(?:[.,]\d+)?)\s*(г|гр|мл)/);
         const shtMatch = lower.match(/(\d+(?:[.,]\d+)?)\s*(шт|куск|порц|лож)/);
         const numOnly = lower.match(/(\d+(?:[.,]\d+)?)/);
-
         if (gMatch) {
           const factor = parseFloat(gMatch[1].replace(",", ".")) / 100;
-          totalKcal += found.per100.kcal * factor;
-          totalP += found.per100.p * factor;
-          totalF += found.per100.f * factor;
-          totalC += found.per100.c * factor;
+          totalKcal += found.per100.kcal * factor; totalP += found.per100.p * factor; totalF += found.per100.f * factor; totalC += found.per100.c * factor;
         } else if (shtMatch && found.perUnit) {
           const cnt = parseFloat(shtMatch[1].replace(",", "."));
-          totalKcal += found.perUnit.kcal * cnt;
-          totalP += found.perUnit.p * cnt;
-          totalF += found.perUnit.f * cnt;
-          totalC += found.perUnit.c * cnt;
+          totalKcal += found.perUnit.kcal * cnt; totalP += found.perUnit.p * cnt; totalF += found.perUnit.f * cnt; totalC += found.perUnit.c * cnt;
         } else if (numOnly) {
           const val = parseFloat(numOnly[1].replace(",", "."));
           if (found.unit === "шт" && val <= 10 && found.perUnit) {
-            totalKcal += found.perUnit.kcal * val;
-            totalP += found.perUnit.p * val;
-            totalF += found.perUnit.f * val;
-            totalC += found.perUnit.c * val;
+            totalKcal += found.perUnit.kcal * val; totalP += found.perUnit.p * val; totalF += found.perUnit.f * val; totalC += found.perUnit.c * val;
           } else {
             const factor = val / 100;
-            totalKcal += found.per100.kcal * factor;
-            totalP += found.per100.p * factor;
-            totalF += found.per100.f * factor;
-            totalC += found.per100.c * factor;
+            totalKcal += found.per100.kcal * factor; totalP += found.per100.p * factor; totalF += found.per100.f * factor; totalC += found.per100.c * factor;
           }
         } else if (found.perUnit) {
-          totalKcal += found.perUnit.kcal;
-          totalP += found.perUnit.p;
-          totalF += found.perUnit.f;
-          totalC += found.perUnit.c;
+          totalKcal += found.perUnit.kcal; totalP += found.perUnit.p; totalF += found.perUnit.f; totalC += found.perUnit.c;
         } else {
-          totalKcal += found.per100.kcal * 1.5;
-          totalP += found.per100.p * 1.5;
-          totalF += found.per100.f * 1.5;
-          totalC += found.per100.c * 1.5;
+          totalKcal += found.per100.kcal * 1.5; totalP += found.per100.p * 1.5; totalF += found.per100.f * 1.5; totalC += found.per100.c * 1.5;
         }
       });
-
-      return {
-        matchedAny,
-        kcal: Math.round(totalKcal),
-        protein: Math.round(totalP * 10) / 10,
-        fat: Math.round(totalF * 10) / 10,
-        carbs: Math.round(totalC * 10) / 10
-      };
+      return { matchedAny, kcal: Math.round(totalKcal), protein: Math.round(totalP * 10) / 10, fat: Math.round(totalF * 10) / 10, carbs: Math.round(totalC * 10) / 10 };
     }
 
     function addFoodItem(name, kcal, protein, fat, carbs) {
-      const date = document.getElementById("fDate").value || todayISO();
       state.foods.push({
         id: "f_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
-        date,
+        date: selectedDate || todayISO(),
         name,
         kcal: Math.round(kcal),
         protein: Math.round(protein * 10) / 10,
@@ -1143,10 +1353,7 @@
 
     document.getElementById("parseFoodBtn").addEventListener("click", () => {
       const raw = document.getElementById("foodSmartInput").value.trim();
-      if (!raw) {
-        showToast("Введите продукты для распознавания", "error");
-        return;
-      }
+      if (!raw) return showToast("Введите продукты", "error");
       const res = parseSmartFood(raw);
       if (!res.matchedAny) {
         showToast("Не узнал продукты — введите вручную", "error");
@@ -1176,8 +1383,6 @@
       showToast("Блюдо добавлено!");
     });
 
-    document.getElementById("fDate").addEventListener("change", renderFoodDay);
-
     function renderPresets() {
       const wrap = document.getElementById("foodPresetsContainer");
       wrap.innerHTML = "";
@@ -1195,18 +1400,11 @@
     }
 
     function renderFoodDay() {
-      const targetDate = document.getElementById("fDate").value || todayISO();
-      document.getElementById("foodDateLabel").textContent = targetDate === todayISO() ? "Сегодня" : targetDate;
+      const targetDate = selectedDate || todayISO();
+      document.getElementById("foodDateLabel").textContent = formatRuShort(targetDate);
       const list = state.foods.filter((f) => f.date === targetDate);
-
       let k = 0, p = 0, f = 0, c = 0;
-      list.forEach((item) => {
-        k += Number(item.kcal || 0);
-        p += Number(item.protein || 0);
-        f += Number(item.fat || 0);
-        c += Number(item.carbs || 0);
-      });
-
+      list.forEach((item) => { k += Number(item.kcal || 0); p += Number(item.protein || 0); f += Number(item.fat || 0); c += Number(item.carbs || 0); });
       document.getElementById("macroKcal").textContent = String(Math.round(k));
       document.getElementById("macroProtein").textContent = `${Math.round(p)}г`;
       document.getElementById("macroFat").textContent = `${Math.round(f)}г`;
@@ -1234,7 +1432,7 @@
           saveState();
           renderStats();
           renderFoodDay();
-          showToast("Приём пищи удалён");
+          showToast("Удалено");
         });
         container.appendChild(row);
       });
@@ -1242,23 +1440,26 @@
 
     // --- Report Formatter ---
     function formatReport(workout) {
-      const targetDate = workout ? workout.date : todayISO();
+      const targetDate = workout ? workout.date : (selectedDate || todayISO());
       const morning = [...state.mornings].reverse().find((m) => m.date === targetDate)
         || state.mornings[state.mornings.length - 1];
       const dayFoods = state.foods.filter((f) => f.date === targetDate);
 
       const lines = [`ОТЧЁТ ПО ДНЮ И ТРЕНИРОВКЕ (${targetDate})`];
       if (morning) {
-        lines.push(`Утро (${morning.date}): вес ${morning.weight} кг | сон ${morning.sleepHours} ч (${morning.sleepQuality}/10) | энергия ${morning.energy}/10 | восстановление ${morning.recovery}/10`);
+        const mTags = morning.tags && morning.tags.length ? ` | теги: ${morning.tags.join(", ")}` : "";
+        lines.push(`Утро (${morning.date}): вес ${morning.weight} кг | сон ${morning.sleepHours} ч (${morning.sleepQuality}/10) | энергия ${morning.energy}/10 | восстановление ${morning.recovery}/10${mTags}`);
         if (morning.note) lines.push(`Утренняя заметка: ${morning.note}`);
       }
       if (workout) {
         lines.push(`Комплекс (${workout.format}): ${workout.title}`);
         lines.push(`Результат: ${workout.result}${workout.duration ? ` | время: ${workout.duration} мин` : ""}`);
+        if (workout.splits && workout.splits.length > 0) lines.push(`Сплиты: ${workout.splits.join(", ")}`);
         if (workout.exercises && workout.exercises.length > 0) {
           lines.push(`Веса: ${workout.exercises.map((ex) => `${ex.name}${ex.weight ? " " + ex.weight : ""}${ex.reps ? " x " + ex.reps : ""}`).join("; ")}`);
         }
-        lines.push(`Обратная связь: RPE ${workout.rpe}/10 | самочувствие ${workout.feeling}/10`);
+        const wTags = workout.tags && workout.tags.length ? ` | теги: ${workout.tags.join(", ")}` : "";
+        lines.push(`Обратная связь: RPE ${workout.rpe}/10 | состояние ${workout.feeling}/10${wTags}`);
         if (workout.feedback) lines.push(`Комментарий: ${workout.feedback}`);
       }
       if (dayFoods.length > 0) {
@@ -1283,17 +1484,20 @@
       if (mornings.length > 0) {
         const last7 = mornings.slice(-7);
         const avg = last7.reduce((sum, m) => sum + Number(m.weight || 0), 0) / last7.length;
-        document.getElementById("statWeightAvg").textContent = `7д ср: ${avg.toFixed(1)} кг`;
+        const delta = lastM ? (lastM.weight - avg) : 0;
+        const sign = delta > 0 ? "+" : "";
+        document.getElementById("statWeightAvg").textContent = `7д: ${avg.toFixed(1)} (${sign}${delta.toFixed(1)})`;
       } else {
         document.getElementById("statWeightAvg").textContent = "7д ср: —";
       }
 
       document.getElementById("statWorkoutsCount").textContent = String(state.workouts.length);
-      document.getElementById("statLastWorkout").textContent = state.workouts[0] ? `Посл: ${state.workouts[0].date}` : "Нет записей";
+      document.getElementById("statLastWorkout").textContent = state.workouts[0] ? `Посл: ${state.workouts[0].date.slice(5)}` : "Нет записей";
 
-      const todayFoods = state.foods.filter((f) => f.date === todayISO());
-      const tk = Math.round(todayFoods.reduce((s, x) => s + Number(x.kcal || 0), 0));
-      const tp = Math.round(todayFoods.reduce((s, x) => s + Number(x.protein || 0), 0));
+      const targetDate = selectedDate || todayISO();
+      const dayFoods = state.foods.filter((f) => f.date === targetDate);
+      const tk = Math.round(dayFoods.reduce((s, x) => s + Number(x.kcal || 0), 0));
+      const tp = Math.round(dayFoods.reduce((s, x) => s + Number(x.protein || 0), 0));
       document.getElementById("statTodayKcal").textContent = String(tk);
       document.getElementById("statTodayProtein").textContent = `Белок: ${tp} г`;
     }
@@ -1349,15 +1553,9 @@
     function renderHistory() {
       const feed = document.getElementById("historyFeed");
       const items = [];
-      if (historyFilter === "all" || historyFilter === "workout") {
-        state.workouts.forEach((w) => items.push({ type: "workout", date: w.date, data: w }));
-      }
-      if (historyFilter === "all" || historyFilter === "morning") {
-        state.mornings.forEach((m) => items.push({ type: "morning", date: m.date, data: m }));
-      }
-      if (historyFilter === "all" || historyFilter === "food") {
-        state.foods.forEach((f) => items.push({ type: "food", date: f.date, data: f }));
-      }
+      if (historyFilter === "all" || historyFilter === "workout") state.workouts.forEach((w) => items.push({ type: "workout", date: w.date, data: w }));
+      if (historyFilter === "all" || historyFilter === "morning") state.mornings.forEach((m) => items.push({ type: "morning", date: m.date, data: m }));
+      if (historyFilter === "all" || historyFilter === "food") state.foods.forEach((f) => items.push({ type: "food", date: f.date, data: f }));
       items.sort((a, b) => b.date.localeCompare(a.date));
 
       if (items.length === 0) {
@@ -1372,6 +1570,7 @@
 
         if (item.type === "workout") {
           const w = item.data;
+          const tagsHtml = w.tags && w.tags.length ? `<div class="flex flex-wrap gap-1">${w.tags.map((t) => `<span class="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-zinc-300">${escapeHtml(t)}</span>`).join("")}</div>` : "";
           card.innerHTML = `
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
@@ -1381,8 +1580,9 @@
               <span class="text-xs font-bold text-white">${escapeHtml(w.result)}</span>
             </div>
             <p class="text-xs text-zinc-200 leading-relaxed">${escapeHtml(w.title)}</p>
+            ${tagsHtml}
             <div class="flex items-center justify-between text-[11px] text-zinc-400 pt-1.5 border-t border-white/[0.06]">
-              <span>RPE: <strong class="text-white">${w.rpe}/10</strong> • Самочувствие: <strong class="text-white">${w.feeling}/10</strong></span>
+              <span>RPE: <strong class="text-white">${w.rpe}/10</strong> • Сост: <strong class="text-white">${w.feeling}/10</strong></span>
               <div class="flex items-center gap-3">
                 <button type="button" class="copy-w-btn text-red-400 font-semibold">Копировать</button>
                 <button type="button" class="del-btn text-zinc-400 hover:text-red-400 font-semibold">${pendingDeleteId === w.id ? "Точно?" : "Удалить"}</button>
@@ -1394,6 +1594,7 @@
           card.querySelector(".del-btn").addEventListener("click", () => handleDelete("workout", w.id));
         } else if (item.type === "morning") {
           const m = item.data;
+          const tagsHtml = m.tags && m.tags.length ? `<div class="flex flex-wrap gap-1">${m.tags.map((t) => `<span class="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-zinc-300">${escapeHtml(t)}</span>`).join("")}</div>` : "";
           card.innerHTML = `
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
@@ -1402,6 +1603,7 @@
               </div>
               <span class="text-xs font-bold text-red-400">${m.weight.toFixed(1)} кг</span>
             </div>
+            ${tagsHtml}
             <div class="flex items-center justify-between text-[11px] text-zinc-400">
               <span>Сон: ${m.sleepHours}ч (${m.sleepQuality}/10) • Энергия: ${m.energy}/10 • Восст: ${m.recovery}/10</span>
               <button type="button" class="del-btn text-zinc-400 hover:text-red-400 font-semibold">${pendingDeleteId === m.id ? "Точно?" : "Удалить"}</button>
@@ -1445,7 +1647,7 @@
       renderStats();
       renderHistory();
       renderChart();
-      showToast("Запись удалена");
+      showToast("Удалено");
     }
 
     // --- Backup ---
@@ -1470,11 +1672,7 @@
         try {
           const parsed = JSON.parse(ev.target.result);
           if (parsed && Array.isArray(parsed.mornings) && Array.isArray(parsed.workouts)) {
-            state = {
-              mornings: parsed.mornings,
-              workouts: parsed.workouts,
-              foods: Array.isArray(parsed.foods) ? parsed.foods : []
-            };
+            state = { mornings: parsed.mornings, workouts: parsed.workouts, foods: Array.isArray(parsed.foods) ? parsed.foods : [] };
             saveState();
             renderStats();
             renderHistory();
@@ -1522,12 +1720,14 @@
     });
 
     // --- Init ---
-    document.getElementById("mDate").value = todayISO();
-    document.getElementById("wDate").value = todayISO();
-    document.getElementById("fDate").value = todayISO();
+    selectedDate = todayISO();
+    loadState();
+    renderDateStrip();
+    renderTagChips("morningTagsWrap", MORNING_TAGS, selectedMorningTags);
+    renderTagChips("workoutTagsWrap", WORKOUT_TAGS, selectedWorkoutTags);
+    renderFormatChips();
     addExerciseRow("Махи гирей", "", "");
     renderPresets();
-    loadState();
     renderStats();
     updateReadinessRing();
     resetTimer();
