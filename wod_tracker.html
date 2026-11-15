@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>WOD Tracker — Кроссфит и самочувствие</title>
+
+  <!-- PWA / iOS Home Screen Meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="WOD Tracker" />
+  <meta name="theme-color" content="#090b10" />
+
+  <!-- Inline SVG App Icon for iOS & Manifest -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23090b10'/%3E%3Crect x='12' y='12' width='156' height='156' rx='32' fill='%23121620' stroke='%2310b981' stroke-width='4'/%3E%3Cpath d='M45 90h18l12-30 18 60 15-42 12 12h15' fill='none' stroke='%2310b981' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    * {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background-color: #090b10;
+      color: #f3f4f6;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: calc(84px + env(safe-area-inset-bottom));
+      overscroll-behavior-y: contain;
+    }
+    .glass-card {
+      background: #121620;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .input-dark {
+      background: #0b0e14;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f9fafb;
+      transition: border-color 0.15s ease;
+    }
+    .input-dark:focus {
+      outline: none;
+      border-color: #10b981;
+    }
+    input[type="range"] {
+      accent-color: #10b981;
+    }
+    .tab-bar {
+      background: rgba(15, 19, 28, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .toast-enter {
+      animation: slideUp 0.22s ease-out forwards;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen antialiased selection:bg-emerald-500/30">
+
+  <!-- Top Header -->
+  <header class="sticky top-0 z-30 bg-[#090b10]/90 backdrop-blur-md border-b border-white/10">
+    <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-extrabold text-sm">
+          CF
+        </div>
+        <div>
+          <h1 class="text-base font-bold tracking-tight text-white leading-tight">WOD Tracker</h1>
+          <p class="text-[11px] text-gray-400" id="headerSubtitle">Кроссфит • Вес • Самочувствие</p>
+        </div>
+      </div>
+      <button id="quickCopyBtn" type="button" class="px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-semibold transition active:scale-95">
+        Копировать отчёт
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-xl mx-auto px-4 pt-4 space-y-4">
+
+    <!-- Quick Stats Strip -->
+    <section class="grid grid-cols-3 gap-2.5">
+      <div class="glass-card rounded-2xl p-3">
+        <div class="text-[11px] text-gray-400 font-medium">Вес</div>
+        <div class="text-lg font-bold text-white mt-0.5" id="statLastWeight">—</div>
+        <div class="text-[10px] text-emerald-400 mt-0.5" id="statWeightAvg">7д ср: —</div>
+      </div>
+      <div class="glass-card rounded-2xl p-3">
+        <div class="text-[11px] text-gray-400 font-medium">Тренировок</div>
+        <div class="text-lg font-bold text-white mt-0.5" id="statWorkoutsCount">0</div>
+        <div class="text-[10px] text-gray-400 mt-0.5" id="statLastWorkout">Нет записей</div>
+      </div>
+      <div class="glass-card rounded-2xl p-3">
+        <div class="text-[11px] text-gray-400 font-medium">Ср. RPE</div>
+        <div class="text-lg font-bold text-white mt-0.5" id="statAvgRpe">—</div>
+        <div class="text-[10px] text-amber-400 mt-0.5" id="statLastEnergy">Энергия: —</div>
+      </div>
+    </section>
+
+    <!-- VIEW 1: MORNING CHECK-IN -->
+    <section id="view-morning" class="space-y-4">
+      <div class="glass-card rounded-2xl p-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-bold text-white">Утренний чек-ин</h2>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">20 сек</span>
+        </div>
+
+        <form id="morningForm" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="mDate" class="block text-xs text-gray-400 mb-1.5">Дата</label>
+              <input id="mDate" type="date" required class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+            </div>
+            <div>
+              <label for="mWeight" class="block text-xs text-gray-400 mb-1.5">Вес утром (кг)</label>
+              <input id="mWeight" type="number" step="0.1" min="30" max="250" placeholder="85.4" required class="input-dark w-full rounded-xl px-3 py-2.5 text-sm font-semibold" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="mSleepHours" class="block text-xs text-gray-400 mb-1.5">Сон (часов)</label>
+              <input id="mSleepHours" type="number" step="0.5" min="0" max="16" placeholder="6.5" required class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+            </div>
+            <div>
+              <div class="flex justify-between text-xs text-gray-400 mb-1.5">
+                <label for="mSleepQuality">Качество сна</label>
+                <span class="text-emerald-400 font-semibold" id="mSleepQualityVal">7/10</span>
+              </div>
+              <input id="mSleepQuality" type="range" min="1" max="10" value="7" class="w-full h-9 cursor-pointer" />
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-1">
+            <div>
+              <div class="flex justify-between text-xs text-gray-400 mb-1">
+                <label for="mEnergy">Энергия и бодрость</label>
+                <span class="text-emerald-400 font-semibold" id="mEnergyVal">7/10</span>
+              </div>
+              <input id="mEnergy" type="range" min="1" max="10" value="7" class="w-full h-8 cursor-pointer" />
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs text-gray-400 mb-1">
+                <label for="mRecovery">Восстановление мышц (10 = свежий)</label>
+                <span class="text-emerald-400 font-semibold" id="mRecoveryVal">7/10</span>
+              </div>
+              <input id="mRecovery" type="range" min="1" max="10" value="7" class="w-full h-8 cursor-pointer" />
+            </div>
+          </div>
+
+          <div>
+            <label for="mNote" class="block text-xs text-gray-400 mb-1.5">Утреннее самочувствие (опционально)</label>
+            <input id="mNote" type="text" placeholder="Например: немного забиты ноги после приседа" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+          </div>
+
+          <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition active:scale-[0.98]">
+            Сохранить утренний чек-ин
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- VIEW 2: WORKOUT LOG + FEEDBACK -->
+    <section id="view-workout" class="hidden space-y-4">
+      <div class="glass-card rounded-2xl p-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-bold text-white">Кроссфит-тренировка</h2>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-orange-500/15 text-orange-300 border border-orange-500/25">WOD + Итог</span>
+        </div>
+
+        <form id="workoutForm" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="wDate" class="block text-xs text-gray-400 mb-1.5">Дата</label>
+              <input id="wDate" type="date" required class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+            </div>
+            <div>
+              <label for="wFormat" class="block text-xs text-gray-400 mb-1.5">Формат комплекса</label>
+              <select id="wFormat" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm">
+                <option value="For Time">For Time</option>
+                <option value="AMRAP">AMRAP</option>
+                <option value="EMOM">EMOM</option>
+                <option value="Силовая + WOD">Силовая + WOD</option>
+                <option value="Интервалы / Эргометры">Интервалы / Эргометры</option>
+                <option value="Другое">Другое</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label for="wTitle" class="block text-xs text-gray-400 mb-1.5">Название / задание комплекса (можно вставить из ветки)</label>
+            <textarea id="wTitle" rows="3" required placeholder="Например: AMRAP 15 мин: 10 махов гирей 16 кг, 12 жимовых швунгов гантелей 12.5 кг, 250 м гребля" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm leading-relaxed"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="wResult" class="block text-xs text-gray-400 mb-1.5">Результат (время / раунды / кал)</label>
+              <input id="wResult" type="text" required placeholder="14:25 или 6 рд + 8 повт" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm font-semibold" />
+            </div>
+            <div>
+              <label for="wDuration" class="block text-xs text-gray-400 mb-1.5">Длительность (мин)</label>
+              <input id="wDuration" type="number" min="1" max="240" placeholder="65" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+            </div>
+          </div>
+
+          <!-- Dynamic Exercises & Working Weights -->
+          <div class="space-y-2 pt-1">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium text-gray-300">Рабочие веса и упражнения</span>
+              <button type="button" id="addExerciseBtn" class="text-xs font-semibold text-emerald-400 hover:text-emerald-300 py-1 px-2 rounded-lg bg-emerald-500/10">
+                + Добавить упражнение
+              </button>
+            </div>
+            <div id="exerciseList" class="space-y-2"></div>
+          </div>
+
+          <!-- Post-Workout Feedback -->
+          <div class="border-t border-white/10 pt-4 space-y-3">
+            <h3 class="text-sm font-bold text-white">Обратная связь после тренировки</h3>
+
+            <div>
+              <div class="flex justify-between text-xs text-gray-400 mb-1">
+                <label for="wRpe">Тяжесть нагрузки (RPE)</label>
+                <span class="text-orange-400 font-semibold" id="wRpeVal">8/10</span>
+              </div>
+              <input id="wRpe" type="range" min="1" max="10" value="8" class="w-full h-8 cursor-pointer" />
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs text-gray-400 mb-1">
+                <label for="wFeeling">Самочувствие после (10 = отлично)</label>
+                <span class="text-emerald-400 font-semibold" id="wFeelingVal">8/10</span>
+              </div>
+              <input id="wFeeling" type="range" min="1" max="10" value="8" class="w-full h-8 cursor-pointer" />
+            </div>
+
+            <div>
+              <label for="wFeedback" class="block text-xs text-gray-400 mb-1.5">Заметка / обратная связь (пульс, техника, где просел)</label>
+              <textarea id="wFeedback" rows="2" placeholder="Например: на 4 раунде просел хват, дыхалка держала ровно, вес в приседе зашёл уверенно" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm"></textarea>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+            <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition active:scale-[0.98]">
+              Сохранить тренировку
+            </button>
+            <button type="button" id="saveAndCopyBtn" class="w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-semibold text-sm transition active:scale-[0.98]">
+              Сохранить и скопировать отчёт
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- VIEW 3: HISTORY, CHART & BACKUP -->
+    <section id="view-history" class="hidden space-y-4">
+      <!-- Weight Chart -->
+      <div class="glass-card rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-white">Динамика веса (кг)</h2>
+          <span class="text-[11px] text-gray-400" id="chartPointsLabel">Последние записи</span>
+        </div>
+        <div class="relative h-56 w-full">
+          <canvas id="weightChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Filter & Feed -->
+      <div class="glass-card rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <h2 class="text-sm font-bold text-white">Журнал записей</h2>
+          <div class="flex gap-1.5 text-xs">
+            <button type="button" data-filter="all" class="filter-btn px-2.5 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-semibold">Все</button>
+            <button type="button" data-filter="workout" class="filter-btn px-2.5 py-1.5 rounded-lg bg-white/5 text-gray-300">Тренировки</button>
+            <button type="button" data-filter="morning" class="filter-btn px-2.5 py-1.5 rounded-lg bg-white/5 text-gray-300">Утро</button>
+          </div>
+        </div>
+        <div id="historyFeed" class="space-y-2.5"></div>
+      </div>
+
+      <!-- Backup & Demo Controls -->
+      <div class="glass-card rounded-2xl p-4 space-y-3">
+        <h2 class="text-sm font-bold text-white">Резервная копия данных</h2>
+        <p class="text-xs text-gray-400 leading-relaxed">
+          Данные хранятся на вашем iPhone. Раз в неделю сохраняйте файл бэкапа в «Файлы», чтобы история не потерялась при очистке кэша Safari.
+        </p>
+        <div class="grid grid-cols-2 gap-2.5">
+          <button type="button" id="exportJsonBtn" class="py-2.5 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-semibold transition">
+            Скачать JSON-бэкап
+          </button>
+          <label class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold text-center cursor-pointer transition">
+            Восстановить из JSON
+            <input type="file" id="importJsonInput" accept=".json,application/json" class="hidden" />
+          </label>
+        </div>
+        <div class="flex items-center justify-between pt-1">
+          <button type="button" id="clearDemoBtn" class="text-xs text-rose-400 hover:text-rose-300 underline underline-offset-2">
+            Очистить все записи
+          </button>
+          <button type="button" id="loadDemoBtn" class="text-xs text-gray-400 hover:text-gray-200 underline underline-offset-2">
+            Загрузить пример
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Tab Navigation -->
+  <nav class="tab-bar fixed bottom-0 left-0 right-0 z-40">
+    <div class="max-w-xl mx-auto grid grid-cols-3 h-16">
+      <button type="button" data-tab="morning" class="nav-tab flex flex-col items-center justify-center gap-1 text-emerald-400">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <span class="text-[11px] font-semibold">Утро</span>
+      </button>
+      <button type="button" data-tab="workout" class="nav-tab flex flex-col items-center justify-center gap-1 text-gray-400">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <span class="text-[11px] font-semibold">Тренировка</span>
+      </button>
+      <button type="button" data-tab="history" class="nav-tab flex flex-col items-center justify-center gap-1 text-gray-400">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <span class="text-[11px] font-semibold">История</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Toast Notification -->
+  <div id="toastContainer" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-[90%] max-w-md flex flex-col items-center gap-2"></div>
+
+  <script>
+    // --- PWA Manifest Registration via Blob (Single-file support) ---
+    (function registerManifest() {
+      try {
+        const manifest = {
+          name: "WOD Tracker — Кроссфит и самочувствие",
+          short_name: "WOD Tracker",
+          start_url: ".",
+          display: "standalone",
+          background_color: "#090b10",
+          theme_color: "#090b10",
+          icons: [{
+            src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23090b10'/%3E%3Cpath d='M110 256h56l36-96 52 192 44-128 36 32h108' fill='none' stroke='%2310b981' stroke-width='28' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
+            sizes: "512x512",
+            type: "image/svg+xml"
+          }]
+        };
+        const blob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
+        const link = document.createElement("link");
+        link.rel = "manifest";
+        link.href = URL.createObjectURL(blob);
+        document.head.appendChild(link);
+      } catch (e) {}
+    })();
+
+    // --- State & Storage ---
+    const STORAGE_KEY = "cf_wod_tracker_v1";
+    let state = { mornings: [], workouts: [] };
+    let currentTab = "morning";
+    let historyFilter = "all";
+    let weightChartInstance = null;
+    let pendingDeleteId = null;
+    let pendingClearAll = false;
+
+    function todayISO() {
+      const d = new Date();
+      const offset = d.getTimezoneOffset();
+      const local = new Date(d.getTime() - offset * 60000);
+      return local.toISOString().split("T")[0];
+    }
+
+    function dateOffsetISO(daysAgo) {
+      const d = new Date();
+      d.setDate(d.getDate() - daysAgo);
+      const offset = d.getTimezoneOffset();
+      const local = new Date(d.getTime() - offset * 60000);
+      return local.toISOString().split("T")[0];
+    }
+
+    function getDemoData() {
+      return {
+        mornings: [
+          { id: "m_demo_1", date: dateOffsetISO(4), weight: 86.2, sleepHours: 6.0, sleepQuality: 6, energy: 6, recovery: 7, note: "Лёгкая усталость", isDemo: true },
+          { id: "m_demo_2", date: dateOffsetISO(2), weight: 85.8, sleepHours: 6.5, sleepQuality: 7, energy: 7, recovery: 8, note: "Бодрое утро", isDemo: true },
+          { id: "m_demo_3", date: todayISO(), weight: 85.4, sleepHours: 7.0, sleepQuality: 8, energy: 8, recovery: 8, note: "Готов к комплексу", isDemo: true }
+        ],
+        workouts: [
+          {
+            id: "w_demo_1",
+            date: dateOffsetISO(2),
+            format: "AMRAP",
+            title: "AMRAP 15 мин: 10 махов гирей, 10 жимовых швунгов гантелей, 250м гребля",
+            result: "5 раундов + 12 повт",
+            duration: 60,
+            exercises: [
+              { name: "Махи гирей", weight: "16 кг", reps: "10" },
+              { name: "Швунги гантелей", weight: "12.5 кг", reps: "10" }
+            ],
+            rpe: 8,
+            feeling: 8,
+            feedback: "Ровный темп на гребле, в 4 раунде забились предплечья.",
+            isDemo: true
+          }
+        ]
+      };
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.mornings) && Array.isArray(parsed.workouts)) {
+            state = parsed;
+            return;
+          }
+        }
+      } catch (e) {}
+      state = getDemoData();
+      saveState();
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        showToast("Не удалось сохранить в память браузера", "error");
+      }
+    }
+
+    // --- UI Helpers ---
+    function showToast(message, type = "success") {
+      const container = document.getElementById("toastContainer");
+      const el = document.createElement("div");
+      const color = type === "error"
+        ? "bg-rose-600 text-white"
+        : "bg-emerald-500 text-slate-950";
+      el.className = `toast-enter px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg ${color}`;
+      el.textContent = message;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.remove();
+      }, 2600);
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function copyTextToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast("Отчёт скопирован для вставки в ветку!");
+        }).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand("copy");
+        showToast("Отчёт скопирован для вставки в ветку!");
+      } catch (e) {
+        showToast("Не удалось скопировать автоматически", "error");
+      }
+      document.body.removeChild(ta);
+    }
+
+    // --- Navigation ---
+    function switchTab(tab) {
+      currentTab = tab;
+      ["morning", "workout", "history"].forEach((t) => {
+        const view = document.getElementById(`view-${t}`);
+        if (t === tab) {
+          view.classList.remove("hidden");
+        } else {
+          view.classList.add("hidden");
+        }
+      });
+
+      document.querySelectorAll(".nav-tab").forEach((btn) => {
+        const isActive = btn.dataset.tab === tab;
+        btn.classList.toggle("text-emerald-400", isActive);
+        btn.classList.toggle("text-gray-400", !isActive);
+      });
+
+      if (tab === "history") {
+        renderHistory();
+        renderChart();
+      }
+    }
+
+    document.querySelectorAll(".nav-tab").forEach((btn) => {
+      btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+    });
+
+    // --- Range Slider Labels ---
+    const sliders = [
+      ["mSleepQuality", "mSleepQualityVal"],
+      ["mEnergy", "mEnergyVal"],
+      ["mRecovery", "mRecoveryVal"],
+      ["wRpe", "wRpeVal"],
+      ["wFeeling", "wFeelingVal"]
+    ];
+    sliders.forEach(([inputId, labelId]) => {
+      const input = document.getElementById(inputId);
+      const label = document.getElementById(labelId);
+      input.addEventListener("input", () => {
+        label.textContent = `${input.value}/10`;
+      });
+    });
+
+    // --- Dynamic Exercise Rows ---
+    function addExerciseRow(name = "", weight = "", reps = "") {
+      const list = document.getElementById("exerciseList");
+      const row = document.createElement("div");
+      row.className = "exercise-row grid grid-cols-12 gap-2 items-center";
+      row.innerHTML = `
+        <input type="text" placeholder="Упражнение" value="${escapeHtml(name)}" class="ex-name input-dark col-span-5 rounded-xl px-2.5 py-2 text-xs" />
+        <input type="text" placeholder="Вес" value="${escapeHtml(weight)}" class="ex-weight input-dark col-span-3 rounded-xl px-2.5 py-2 text-xs" />
+        <input type="text" placeholder="Повт" value="${escapeHtml(reps)}" class="ex-reps input-dark col-span-3 rounded-xl px-2.5 py-2 text-xs" />
+        <button type="button" class="remove-ex col-span-1 h-8 rounded-lg bg-white/5 hover:bg-rose-500/20 text-gray-400 hover:text-rose-300 text-xs font-bold">×</button>
+      `;
+      row.querySelector(".remove-ex").addEventListener("click", () => row.remove());
+      list.appendChild(row);
+    }
+
+    document.getElementById("addExerciseBtn").addEventListener("click", () => addExerciseRow());
+
+    // --- Morning Form Submit ---
+    document.getElementById("morningForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const entry = {
+        id: "m_" + Date.now(),
+        date: document.getElementById("mDate").value || todayISO(),
+        weight: parseFloat(document.getElementById("mWeight").value),
+        sleepHours: parseFloat(document.getElementById("mSleepHours").value),
+        sleepQuality: parseInt(document.getElementById("mSleepQuality").value, 10),
+        energy: parseInt(document.getElementById("mEnergy").value, 10),
+        recovery: parseInt(document.getElementById("mRecovery").value, 10),
+        note: document.getElementById("mNote").value.trim()
+      };
+      state.mornings.push(entry);
+      state.mornings.sort((a, b) => a.date.localeCompare(b.date));
+      saveState();
+      renderStats();
+      document.getElementById("mNote").value = "";
+      showToast("Утренний чек-ин сохранён!");
+    });
+
+    // --- Collect & Save Workout ---
+    function collectWorkoutFromForm() {
+      const exercises = [];
+      document.querySelectorAll("#exerciseList .exercise-row").forEach((row) => {
+        const name = row.querySelector(".ex-name").value.trim();
+        const weight = row.querySelector(".ex-weight").value.trim();
+        const reps = row.querySelector(".ex-reps").value.trim();
+        if (name || weight || reps) {
+          exercises.push({ name: name || "Упражнение", weight, reps });
+        }
+      });
+
+      return {
+        id: "w_" + Date.now(),
+        date: document.getElementById("wDate").value || todayISO(),
+        format: document.getElementById("wFormat").value,
+        title: document.getElementById("wTitle").value.trim(),
+        result: document.getElementById("wResult").value.trim(),
+        duration: document.getElementById("wDuration").value ? parseInt(document.getElementById("wDuration").value, 10) : null,
+        exercises,
+        rpe: parseInt(document.getElementById("wRpe").value, 10),
+        feeling: parseInt(document.getElementById("wFeeling").value, 10),
+        feedback: document.getElementById("wFeedback").value.trim()
+      };
+    }
+
+    function saveWorkoutEntry() {
+      const form = document.getElementById("workoutForm");
+      if (!form.reportValidity()) return null;
+      const entry = collectWorkoutFromForm();
+      state.workouts.push(entry);
+      state.workouts.sort((a, b) => b.date.localeCompare(a.date));
+      saveState();
+      renderStats();
+      return entry;
+    }
+
+    document.getElementById("workoutForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const saved = saveWorkoutEntry();
+      if (saved) {
+        showToast("Тренировка сохранена!");
+      }
+    });
+
+    document.getElementById("saveAndCopyBtn").addEventListener("click", () => {
+      const saved = saveWorkoutEntry();
+      if (saved) {
+        copyTextToClipboard(formatReport(saved));
+      }
+    });
+
+    // --- Report Formatter for Workout Thread ---
+    function formatReport(workout) {
+      const targetDate = workout ? workout.date : todayISO();
+      const morning = [...state.mornings].reverse().find((m) => m.date === targetDate)
+        || state.mornings[state.mornings.length - 1];
+
+      const lines = [];
+      lines.push(`ОТЧЁТ ПО ТРЕНИРОВКЕ (${targetDate})`);
+
+      if (morning) {
+        lines.push(`Утро (${morning.date}): вес ${morning.weight} кг | сон ${morning.sleepHours} ч (${morning.sleepQuality}/10) | энергия ${morning.energy}/10 | восстановление ${morning.recovery}/10`);
+        if (morning.note) lines.push(`Утренняя заметка: ${morning.note}`);
+      }
+
+      if (workout) {
+        lines.push(`Комплекс (${workout.format}): ${workout.title}`);
+        lines.push(`Результат: ${workout.result}${workout.duration ? ` | время занятия: ${workout.duration} мин` : ""}`);
+        if (workout.exercises && workout.exercises.length > 0) {
+          const exStr = workout.exercises.map((ex) => `${ex.name}${ex.weight ? " " + ex.weight : ""}${ex.reps ? " x " + ex.reps : ""}`).join("; ");
+          lines.push(`Веса: ${exStr}`);
+        }
+        lines.push(`Обратная связь: RPE ${workout.rpe}/10 | самочувствие после ${workout.feeling}/10`);
+        if (workout.feedback) lines.push(`Комментарий: ${workout.feedback}`);
+      }
+
+      return lines.join("\n");
+    }
+
+    document.getElementById("quickCopyBtn").addEventListener("click", () => {
+      const latestWorkout = state.workouts[0] || null;
+      copyTextToClipboard(formatReport(latestWorkout));
+    });
+
+    // --- Stats & Chart ---
+    function renderStats() {
+      const mornings = [...state.mornings].sort((a, b) => a.date.localeCompare(b.date));
+      const lastM = mornings[mornings.length - 1];
+
+      document.getElementById("statLastWeight").textContent = lastM ? `${lastM.weight.toFixed(1)} кг` : "—";
+      if (mornings.length > 0) {
+        const last7 = mornings.slice(-7);
+        const avg = last7.reduce((sum, m) => sum + Number(m.weight || 0), 0) / last7.length;
+        document.getElementById("statWeightAvg").textContent = `7д ср: ${avg.toFixed(1)} кг`;
+      } else {
+        document.getElementById("statWeightAvg").textContent = "7д ср: —";
+      }
+
+      document.getElementById("statWorkoutsCount").textContent = String(state.workouts.length);
+      const lastW = state.workouts[0];
+      document.getElementById("statLastWorkout").textContent = lastW ? `Посл: ${lastW.date}` : "Нет записей";
+
+      if (state.workouts.length > 0) {
+        const avgRpe = state.workouts.reduce((sum, w) => sum + Number(w.rpe || 0), 0) / state.workouts.length;
+        document.getElementById("statAvgRpe").textContent = `${avgRpe.toFixed(1)}/10`;
+      } else {
+        document.getElementById("statAvgRpe").textContent = "—";
+      }
+      document.getElementById("statLastEnergy").textContent = lastM ? `Энергия: ${lastM.energy}/10` : "Энергия: —";
+    }
+
+    function renderChart() {
+      const canvas = document.getElementById("weightChart");
+      const mornings = [...state.mornings].sort((a, b) => a.date.localeCompare(b.date)).slice(-14);
+      document.getElementById("chartPointsLabel").textContent = mornings.length ? `Записей: ${mornings.length}` : "Нет данных";
+
+      if (weightChartInstance) {
+        weightChartInstance.destroy();
+      }
+
+      const labels = mornings.map((m) => m.date.slice(5));
+      const values = mornings.map((m) => m.weight);
+
+      weightChartInstance = new Chart(canvas, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label: "Вес (кг)",
+            data: values,
+            borderColor: "#10b981",
+            backgroundColor: "rgba(16, 185, 129, 0.14)",
+            borderWidth: 2.5,
+            pointBackgroundColor: "#10b981",
+            pointRadius: 4,
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              grid: { color: "rgba(255,255,255,0.05)" },
+              ticks: { color: "#9ca3af", font: { size: 11 } }
+            },
+            y: {
+              grid: { color: "rgba(255,255,255,0.06)" },
+              ticks: { color: "#9ca3af", font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+
+    // --- History Feed ---
+    document.querySelectorAll(".filter-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        historyFilter = btn.dataset.filter;
+        document.querySelectorAll(".filter-btn").forEach((b) => {
+          const active = b.dataset.filter === historyFilter;
+          b.className = active
+            ? "filter-btn px-2.5 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-semibold"
+            : "filter-btn px-2.5 py-1.5 rounded-lg bg-white/5 text-gray-300";
+        });
+        renderHistory();
+      });
+    });
+
+    function renderHistory() {
+      const feed = document.getElementById("historyFeed");
+      const items = [];
+
+      if (historyFilter === "all" || historyFilter === "workout") {
+        state.workouts.forEach((w) => items.push({ type: "workout", date: w.date, data: w }));
+      }
+      if (historyFilter === "all" || historyFilter === "morning") {
+        state.mornings.forEach((m) => items.push({ type: "morning", date: m.date, data: m }));
+      }
+
+      items.sort((a, b) => b.date.localeCompare(a.date));
+
+      if (items.length === 0) {
+        feed.innerHTML = `<div class="text-xs text-gray-500 text-center py-6">Пока нет записей в этом разделе.</div>`;
+        return;
+      }
+
+      feed.innerHTML = "";
+      items.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "rounded-xl bg-[#0b0e14] border border-white/10 p-3 space-y-2";
+
+        if (item.type === "workout") {
+          const w = item.data;
+          const exHtml = (w.exercises && w.exercises.length)
+            ? `<div class="text-[11px] text-gray-400">Веса: ${w.exercises.map((e) => `${escapeHtml(e.name)} ${escapeHtml(e.weight)} ${escapeHtml(e.reps)}`).join(" • ")}</div>`
+            : "";
+
+          card.innerHTML = `
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-orange-500/15 text-orange-300">${escapeHtml(w.format)}</span>
+                <span class="text-xs font-semibold text-gray-300">${escapeHtml(w.date)}</span>
+              </div>
+              <span class="text-xs font-bold text-emerald-400">${escapeHtml(w.result)}</span>
+            </div>
+            <p class="text-xs text-gray-200 leading-relaxed">${escapeHtml(w.title)}</p>
+            ${exHtml}
+            <div class="flex items-center justify-between text-[11px] text-gray-400 pt-1 border-t border-white/5">
+              <span>RPE: <strong class="text-white">${w.rpe}/10</strong> • Самочувствие: <strong class="text-white">${w.feeling}/10</strong></span>
+              <div class="flex items-center gap-2">
+                <button type="button" class="copy-w-btn text-emerald-400 font-semibold">Копировать</button>
+                <button type="button" class="del-btn text-rose-400 font-semibold">${pendingDeleteId === w.id ? "Точно?" : "Удалить"}</button>
+              </div>
+            </div>
+            ${w.feedback ? `<p class="text-[11px] text-gray-400 italic">«${escapeHtml(w.feedback)}»</p>` : ""}
+          `;
+
+          card.querySelector(".copy-w-btn").addEventListener("click", () => copyTextToClipboard(formatReport(w)));
+          card.querySelector(".del-btn").addEventListener("click", () => handleDelete("workout", w.id));
+        } else {
+          const m = item.data;
+          card.innerHTML = `
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300">Утро</span>
+                <span class="text-xs font-semibold text-gray-300">${escapeHtml(m.date)}</span>
+              </div>
+              <span class="text-xs font-bold text-white">${m.weight.toFixed(1)} кг</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-gray-400">
+              <span>Сон: ${m.sleepHours}ч (${m.sleepQuality}/10) • Энергия: ${m.energy}/10 • Восст: ${m.recovery}/10</span>
+              <button type="button" class="del-btn text-rose-400 font-semibold">${pendingDeleteId === m.id ? "Точно?" : "Удалить"}</button>
+            </div>
+            ${m.note ? `<p class="text-[11px] text-gray-400 italic">«${escapeHtml(m.note)}»</p>` : ""}
+          `;
+          card.querySelector(".del-btn").addEventListener("click", () => handleDelete("morning", m.id));
+        }
+
+        feed.appendChild(card);
+      });
+    }
+
+    function handleDelete(type, id) {
+      if (pendingDeleteId !== id) {
+        pendingDeleteId = id;
+        renderHistory();
+        setTimeout(() => {
+          if (pendingDeleteId === id) {
+            pendingDeleteId = null;
+            renderHistory();
+          }
+        }, 3000);
+        return;
+      }
+      pendingDeleteId = null;
+      if (type === "workout") {
+        state.workouts = state.workouts.filter((w) => w.id !== id);
+      } else {
+        state.mornings = state.mornings.filter((m) => m.id !== id);
+      }
+      saveState();
+      renderStats();
+      renderHistory();
+      renderChart();
+      showToast("Запись удалена");
+    }
+
+    // --- Backup Export / Import ---
+    document.getElementById("exportJsonBtn").addEventListener("click", () => {
+      const payload = JSON.stringify(state, null, 2);
+      const blob = new Blob([payload], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `crossfit-tracker-backup-${todayISO()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Бэкап скачан!");
+    });
+
+    document.getElementById("importJsonInput").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          if (parsed && Array.isArray(parsed.mornings) && Array.isArray(parsed.workouts)) {
+            state = parsed;
+            saveState();
+            renderStats();
+            renderHistory();
+            renderChart();
+            showToast("История восстановлена!");
+          } else {
+            showToast("Неверный формат файла бэкапа", "error");
+          }
+        } catch (err) {
+          showToast("Ошибка чтения JSON-файла", "error");
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = "";
+    });
+
+    document.getElementById("clearDemoBtn").addEventListener("click", () => {
+      const btn = document.getElementById("clearDemoBtn");
+      if (!pendingClearAll) {
+        pendingClearAll = true;
+        btn.textContent = "Нажмите ещё раз для очистки";
+        setTimeout(() => {
+          pendingClearAll = false;
+          btn.textContent = "Очистить все записи";
+        }, 3000);
+        return;
+      }
+      pendingClearAll = false;
+      btn.textContent = "Очистить все записи";
+      state = { mornings: [], workouts: [] };
+      saveState();
+      renderStats();
+      renderHistory();
+      renderChart();
+      showToast("Все записи очищены");
+    });
+
+    document.getElementById("loadDemoBtn").addEventListener("click", () => {
+      state = getDemoData();
+      saveState();
+      renderStats();
+      renderHistory();
+      renderChart();
+      showToast("Загружен пример данных");
+    });
+
+    // --- Init ---
+    document.getElementById("mDate").value = todayISO();
+    document.getElementById("wDate").value = todayISO();
+    addExerciseRow("Приседания / гиря", "", "");
+    loadState();
+    renderStats();
+  </script>
+</body>
+</html>
