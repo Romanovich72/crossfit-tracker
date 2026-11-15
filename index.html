@@ -9,245 +9,312 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="WOD Tracker" />
-  <meta name="theme-color" content="#08090c" />
+  <meta name="theme-color" content="#000000" />
 
-  <!-- Inline SVG App Icon (Black & Red) -->
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%2308090c'/%3E%3Crect x='12' y='12' width='156' height='156' rx='32' fill='%2312141b' stroke='%23ef4444' stroke-width='4'/%3E%3Cpath d='M45 90h18l12-30 18 60 15-42 12 12h15' fill='none' stroke='%23ef4444' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <!-- Inline SVG App Icon (OLED Black & Crimson) -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23000000'/%3E%3Ccircle cx='90' cy='90' r='62' fill='none' stroke='%2326262e' stroke-width='14'/%3E%3Ccircle cx='90' cy='90' r='62' fill='none' stroke='%23ef4444' stroke-width='14' stroke-dasharray='290 390' stroke-linecap='round' transform='rotate(-90 90 90)'/%3E%3Cpath d='M56 92h14l10-24 14 48 12-34 8 10h12' fill='none' stroke='%23ffffff' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
 
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <style>
+    :root {
+      --bg-oled: #000000;
+      --card-bg: #111217;
+      --card-elevated: #181a21;
+      --accent-red: #ef4444;
+      --accent-crimson: #dc2626;
+    }
     * {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
     body {
-      background-color: #08090c;
-      color: #f3f4f6;
+      background-color: var(--bg-oled);
+      color: #f5f5f7;
       padding-top: env(safe-area-inset-top);
-      padding-bottom: calc(88px + env(safe-area-inset-bottom));
+      padding-bottom: calc(92px + env(safe-area-inset-bottom));
       overscroll-behavior-y: contain;
     }
-    .glass-card {
-      background: #12141b;
+    button, nav {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .ios-card {
+      background: linear-gradient(180deg, #161820 0%, #101116 100%);
       border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
-    .input-dark {
-      background: #0a0b10;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: #f9fafb;
-      transition: border-color 0.15s ease;
+    .ios-subcard {
+      background: #0a0b0e;
+      border: 1px solid rgba(255, 255, 255, 0.07);
     }
-    .input-dark:focus {
+    .input-ios {
+      background: #090a0d;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      color: #ffffff;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .input-ios:focus {
       outline: none;
       border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
     }
-    input[type="range"] {
-      accent-color: #ef4444;
+    /* Custom sleek iOS range slider */
+    input[type="range"].ios-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: #232631;
+      outline: none;
     }
-    .tab-bar {
-      background: rgba(12, 13, 19, 0.94);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    input[type="range"].ios-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 3px solid #ef4444;
+      box-shadow: 0 2px 10px rgba(239, 68, 68, 0.55);
+      cursor: pointer;
+    }
+    .ios-tab-bar {
+      background: rgba(12, 13, 17, 0.84);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-top: 0.5px solid rgba(255, 255, 255, 0.12);
       padding-bottom: env(safe-area-inset-bottom);
     }
+    .red-glow-btn {
+      background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+      box-shadow: 0 8px 24px rgba(220, 38, 38, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    }
     .toast-enter {
-      animation: slideUp 0.22s ease-out forwards;
+      animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     @keyframes slideUp {
-      from { opacity: 0; transform: translateY(14px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(16px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
   </style>
 </head>
 <body class="min-h-screen antialiased selection:bg-red-500/30">
 
-  <!-- Top Header -->
-  <header class="sticky top-0 z-30 bg-[#08090c]/92 backdrop-blur-md border-b border-white/10">
+  <!-- Native iOS-style Large Header -->
+  <header class="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-white/[0.07]">
     <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-xl bg-red-600/20 border border-red-500/40 flex items-center justify-center text-red-500 font-extrabold text-sm">
-          CF
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-500/25 to-red-900/20 border border-red-500/40 flex items-center justify-center shadow-inner">
+          <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h3l3-7 4 14 3-9 2 2h3" />
+          </svg>
         </div>
         <div>
-          <h1 class="text-base font-bold tracking-tight text-white leading-tight">WOD Tracker</h1>
-          <p class="text-[11px] text-gray-400" id="headerSubtitle">Кроссфит • Еда • Самочувствие</p>
+          <h1 class="text-[17px] font-bold tracking-tight text-white leading-tight">WOD Tracker</h1>
+          <p class="text-[11px] text-zinc-400 font-medium" id="headerSubtitle">Кроссфит • Еда • Самочувствие</p>
         </div>
       </div>
-      <button id="quickCopyBtn" type="button" class="px-3 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-400 text-xs font-semibold transition active:scale-95">
-        Копировать отчёт
+      <button id="quickCopyBtn" type="button" class="px-3.5 py-2 rounded-full bg-red-500/15 hover:bg-red-500/25 border border-red-500/35 text-red-400 text-xs font-semibold transition active:scale-95 flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+        <span>Отчёт</span>
       </button>
     </div>
   </header>
 
   <main class="max-w-xl mx-auto px-4 pt-4 space-y-4">
 
-    <!-- Quick Stats Strip -->
+    <!-- Apple Fitness Style Summary Strip -->
     <section class="grid grid-cols-3 gap-2.5">
-      <div class="glass-card rounded-2xl p-3">
-        <div class="text-[11px] text-gray-400 font-medium">Вес</div>
-        <div class="text-lg font-bold text-white mt-0.5" id="statLastWeight">—</div>
-        <div class="text-[10px] text-red-400 mt-0.5" id="statWeightAvg">7д ср: —</div>
+      <div class="ios-card rounded-2xl p-3.5">
+        <div class="text-[11px] text-zinc-400 font-medium">Вес</div>
+        <div class="text-[19px] font-bold text-white tracking-tight mt-0.5 tabular-nums" id="statLastWeight">—</div>
+        <div class="text-[10px] text-red-400 font-medium mt-0.5 tabular-nums" id="statWeightAvg">7д ср: —</div>
       </div>
-      <div class="glass-card rounded-2xl p-3">
-        <div class="text-[11px] text-gray-400 font-medium">Тренировок</div>
-        <div class="text-lg font-bold text-white mt-0.5" id="statWorkoutsCount">0</div>
-        <div class="text-[10px] text-gray-400 mt-0.5" id="statLastWorkout">Нет записей</div>
+      <div class="ios-card rounded-2xl p-3.5">
+        <div class="text-[11px] text-zinc-400 font-medium">Тренировок</div>
+        <div class="text-[19px] font-bold text-white tracking-tight mt-0.5 tabular-nums" id="statWorkoutsCount">0</div>
+        <div class="text-[10px] text-zinc-400 mt-0.5 truncate" id="statLastWorkout">Нет записей</div>
       </div>
-      <div class="glass-card rounded-2xl p-3">
-        <div class="text-[11px] text-gray-400 font-medium">Ккал сегодня</div>
-        <div class="text-lg font-bold text-white mt-0.5" id="statTodayKcal">0</div>
-        <div class="text-[10px] text-red-400 mt-0.5" id="statTodayProtein">Белок: 0 г</div>
+      <div class="ios-card rounded-2xl p-3.5">
+        <div class="text-[11px] text-zinc-400 font-medium">Ккал сегодня</div>
+        <div class="text-[19px] font-bold text-white tracking-tight mt-0.5 tabular-nums" id="statTodayKcal">0</div>
+        <div class="text-[10px] text-red-400 font-medium mt-0.5 tabular-nums" id="statTodayProtein">Белок: 0 г</div>
       </div>
     </section>
 
     <!-- VIEW 1: MORNING CHECK-IN -->
     <section id="view-morning" class="space-y-4">
-      <div class="glass-card rounded-2xl p-4 space-y-4">
+      <div class="ios-card rounded-3xl p-5 space-y-5">
         <div class="flex items-center justify-between">
-          <h2 class="text-base font-bold text-white">Утренний чек-ин</h2>
-          <span class="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/25">20 сек</span>
+          <div>
+            <h2 class="text-lg font-bold tracking-tight text-white">Утренний чек-ин</h2>
+            <p class="text-xs text-zinc-400 mt-0.5">Фиксация веса и готовности к нагрузке</p>
+          </div>
+          <!-- Readiness Ring -->
+          <div class="relative w-12 h-12 flex items-center justify-center">
+            <svg class="w-12 h-12 -rotate-90" viewBox="0 0 48 48">
+              <circle cx="24" cy="24" r="19" fill="none" stroke="#22242d" stroke-width="4.5" />
+              <circle id="readinessRing" cx="24" cy="24" r="19" fill="none" stroke="#ef4444" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="119.4" stroke-dashoffset="35.8" />
+            </svg>
+            <span id="readinessScoreText" class="absolute text-[11px] font-bold text-white tabular-nums">7.0</span>
+          </div>
         </div>
 
         <form id="morningForm" class="space-y-4">
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label for="mDate" class="block text-xs text-gray-400 mb-1.5">Дата</label>
-              <input id="mDate" type="date" required class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+              <label for="mDate" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Дата</label>
+              <input id="mDate" type="date" required class="input-ios w-full rounded-2xl px-3.5 py-3 text-sm font-medium" />
             </div>
             <div>
-              <label for="mWeight" class="block text-xs text-gray-400 mb-1.5">Вес утром (кг)</label>
-              <input id="mWeight" type="number" step="0.1" min="30" max="250" placeholder="85.4" required class="input-dark w-full rounded-xl px-3 py-2.5 text-sm font-semibold" />
+              <label for="mWeight" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Вес утром (кг)</label>
+              <div class="flex items-center gap-1.5">
+                <button type="button" id="weightMinusBtn" class="w-10 h-[46px] rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">−</button>
+                <input id="mWeight" type="number" step="0.1" min="30" max="250" value="85.4" required class="input-ios w-full rounded-2xl px-2 py-3 text-center text-sm font-bold tabular-nums" />
+                <button type="button" id="weightPlusBtn" class="w-10 h-[46px] rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">+</button>
+              </div>
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label for="mSleepHours" class="block text-xs text-gray-400 mb-1.5">Сон (часов)</label>
-              <input id="mSleepHours" type="number" step="0.5" min="0" max="16" placeholder="6.5" required class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
-            </div>
-            <div>
-              <div class="flex justify-between text-xs text-gray-400 mb-1.5">
-                <label for="mSleepQuality">Качество сна</label>
-                <span class="text-red-400 font-semibold" id="mSleepQualityVal">7/10</span>
+              <label for="mSleepHours" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Сон (часов)</label>
+              <div class="flex items-center gap-1.5">
+                <button type="button" id="sleepMinusBtn" class="w-10 h-[46px] rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">−</button>
+                <input id="mSleepHours" type="number" step="0.5" min="0" max="16" value="6.5" required class="input-ios w-full rounded-2xl px-2 py-3 text-center text-sm font-bold tabular-nums" />
+                <button type="button" id="sleepPlusBtn" class="w-10 h-[46px] rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">+</button>
               </div>
-              <input id="mSleepQuality" type="range" min="1" max="10" value="7" class="w-full h-9 cursor-pointer" />
+            </div>
+            <div class="ios-subcard rounded-2xl px-3.5 py-2.5 flex flex-col justify-center">
+              <div class="flex justify-between text-[11px] text-zinc-400 mb-2">
+                <label for="mSleepQuality" class="font-medium">Качество сна</label>
+                <span class="text-red-400 font-bold tabular-nums" id="mSleepQualityVal">7/10</span>
+              </div>
+              <input id="mSleepQuality" type="range" min="1" max="10" value="7" class="ios-slider" />
             </div>
           </div>
 
-          <div class="space-y-3 pt-1">
+          <div class="ios-subcard rounded-2xl p-3.5 space-y-4">
             <div>
-              <div class="flex justify-between text-xs text-gray-400 mb-1">
-                <label for="mEnergy">Энергия и бодрость</label>
-                <span class="text-red-400 font-semibold" id="mEnergyVal">7/10</span>
+              <div class="flex justify-between text-xs text-zinc-300 mb-2">
+                <label for="mEnergy" class="font-medium">Энергия и бодрость</label>
+                <span class="text-red-400 font-bold tabular-nums" id="mEnergyVal">7/10</span>
               </div>
-              <input id="mEnergy" type="range" min="1" max="10" value="7" class="w-full h-8 cursor-pointer" />
+              <input id="mEnergy" type="range" min="1" max="10" value="7" class="ios-slider" />
             </div>
 
             <div>
-              <div class="flex justify-between text-xs text-gray-400 mb-1">
-                <label for="mRecovery">Восстановление мышц (10 = свежий)</label>
-                <span class="text-red-400 font-semibold" id="mRecoveryVal">7/10</span>
+              <div class="flex justify-between text-xs text-zinc-300 mb-2">
+                <label for="mRecovery" class="font-medium">Восстановление мышц (10 = свежий)</label>
+                <span class="text-red-400 font-bold tabular-nums" id="mRecoveryVal">7/10</span>
               </div>
-              <input id="mRecovery" type="range" min="1" max="10" value="7" class="w-full h-8 cursor-pointer" />
+              <input id="mRecovery" type="range" min="1" max="10" value="7" class="ios-slider" />
             </div>
           </div>
 
           <div>
-            <label for="mNote" class="block text-xs text-gray-400 mb-1.5">Утреннее самочувствие (опционально)</label>
-            <input id="mNote" type="text" placeholder="Например: немного забиты ноги после приседа" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+            <label for="mNote" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Утреннее самочувствие (опционально)</label>
+            <input id="mNote" type="text" placeholder="Например: немного забиты ноги после приседа" class="input-ios w-full rounded-2xl px-3.5 py-3 text-sm" />
           </div>
 
-          <button type="submit" class="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition active:scale-[0.98]">
+          <button type="submit" class="red-glow-btn w-full py-3.5 rounded-2xl text-white font-bold text-sm tracking-tight transition active:scale-[0.98]">
             Сохранить утренний чек-ин
           </button>
         </form>
       </div>
     </section>
 
-    <!-- VIEW 2: WORKOUT LOG + WOD TIMER + FEEDBACK -->
+    <!-- VIEW 2: WORKOUT LOG + CIRCULAR WOD TIMER -->
     <section id="view-workout" class="hidden space-y-4">
 
-      <!-- WOD Timer Card -->
-      <div class="glass-card rounded-2xl p-4 space-y-3 border border-red-500/20">
+      <!-- Native Circular WOD Timer Card -->
+      <div class="ios-card rounded-3xl p-5 space-y-4">
         <div class="flex items-center justify-between">
-          <h2 class="text-sm font-bold text-white">WOD Таймер</h2>
-          <button id="timerMuteBtn" type="button" class="text-[11px] px-2.5 py-1 rounded-lg bg-white/5 text-gray-300 border border-white/10">
+          <div>
+            <h2 class="text-base font-bold text-white">WOD Таймер</h2>
+            <p class="text-[11px] text-red-400 font-semibold uppercase tracking-wider mt-0.5" id="timerStatusLabel">Готов • E2:30 (6 рд)</p>
+          </div>
+          <button id="timerMuteBtn" type="button" class="text-[11px] px-3 py-1.5 rounded-full bg-white/[0.06] text-zinc-300 border border-white/10 font-medium active:scale-95 transition">
             Звук: ВКЛ
           </button>
         </div>
 
-        <!-- Mode Switcher -->
-        <div class="grid grid-cols-3 gap-1.5 text-xs">
-          <button type="button" data-tmode="e230" class="tmode-btn py-2 rounded-xl bg-red-600 text-white font-bold">Каждые 2:30</button>
-          <button type="button" data-tmode="amrap" class="tmode-btn py-2 rounded-xl bg-white/5 text-gray-300 font-semibold">AMRAP 15:00</button>
-          <button type="button" data-tmode="fortime" class="tmode-btn py-2 rounded-xl bg-white/5 text-gray-300 font-semibold">Секундомер</button>
+        <!-- iOS Segmented Control -->
+        <div class="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-[#090a0d] border border-white/[0.07] text-xs">
+          <button type="button" data-tmode="e230" class="tmode-btn py-2 rounded-xl bg-red-600 text-white font-bold shadow">Каждые 2:30</button>
+          <button type="button" data-tmode="amrap" class="tmode-btn py-2 rounded-xl text-zinc-400 font-semibold">AMRAP 15:00</button>
+          <button type="button" data-tmode="fortime" class="tmode-btn py-2 rounded-xl text-zinc-400 font-semibold">Секундомер</button>
         </div>
 
-        <!-- Timer Config (E2:30 or AMRAP) -->
+        <!-- Timer Config -->
         <div id="timerConfigRow" class="grid grid-cols-2 gap-2.5 text-xs">
           <div id="timerIntervalWrap">
-            <label for="timerIntervalSec" class="block text-[11px] text-gray-400 mb-1">Интервал (сек)</label>
-            <input id="timerIntervalSec" type="number" min="10" max="600" value="150" class="input-dark w-full rounded-xl px-3 py-2 text-xs font-semibold" />
+            <label for="timerIntervalSec" class="block text-[11px] text-zinc-400 mb-1">Интервал (сек)</label>
+            <input id="timerIntervalSec" type="number" min="10" max="600" value="150" class="input-ios w-full rounded-xl px-3 py-2 text-xs font-bold tabular-nums" />
           </div>
           <div id="timerRoundsWrap">
-            <label for="timerTotalRounds" class="block text-[11px] text-gray-400 mb-1">Раундов</label>
-            <input id="timerTotalRounds" type="number" min="1" max="50" value="6" class="input-dark w-full rounded-xl px-3 py-2 text-xs font-semibold" />
+            <label for="timerTotalRounds" class="block text-[11px] text-zinc-400 mb-1">Раундов</label>
+            <input id="timerTotalRounds" type="number" min="1" max="50" value="6" class="input-ios w-full rounded-xl px-3 py-2 text-xs font-bold tabular-nums" />
           </div>
           <div id="timerAmrapWrap" class="hidden col-span-2">
-            <label for="timerAmrapMin" class="block text-[11px] text-gray-400 mb-1">Длительность AMRAP (минут)</label>
-            <input id="timerAmrapMin" type="number" min="1" max="90" value="15" class="input-dark w-full rounded-xl px-3 py-2 text-xs font-semibold" />
+            <label for="timerAmrapMin" class="block text-[11px] text-zinc-400 mb-1">Длительность AMRAP (минут)</label>
+            <input id="timerAmrapMin" type="number" min="1" max="90" value="15" class="input-ios w-full rounded-xl px-3 py-2 text-xs font-bold tabular-nums" />
           </div>
         </div>
 
-        <!-- Timer Display + Round Counter -->
-        <div class="rounded-2xl bg-[#0a0b10] border border-white/10 p-4 flex items-center justify-between gap-3">
-          <div>
-            <div class="text-[11px] text-red-400 font-semibold uppercase tracking-wider" id="timerStatusLabel">Готов • E2:30 (6 рд)</div>
-            <div class="text-4xl font-extrabold tracking-tight text-white tabular-nums mt-0.5" id="timerDisplay">02:30</div>
+        <!-- Circular Timer Ring + Tap Round Counter -->
+        <div class="ios-subcard rounded-3xl p-4 flex items-center justify-between gap-3">
+          <div class="relative w-32 h-32 flex items-center justify-center shrink-0">
+            <svg class="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="52" fill="none" stroke="#1f212b" stroke-width="8" />
+              <circle id="timerProgressRing" cx="60" cy="60" r="52" fill="none" stroke="#ef4444" stroke-width="8" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="0" style="transition: stroke-dashoffset 0.35s linear;" />
+            </svg>
+            <div class="absolute text-center">
+              <div class="text-2xl font-extrabold tracking-tight text-white tabular-nums" id="timerDisplay">02:30</div>
+              <div class="text-[10px] text-zinc-400 font-medium mt-0.5">время</div>
+            </div>
           </div>
-          <button id="roundPlusBtn" type="button" class="px-4 py-3 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-center active:scale-95 transition">
-            <div class="text-[10px] text-red-300 font-medium">Раунды</div>
-            <div class="text-xl font-extrabold text-white" id="roundCounterVal">0</div>
-            <div class="text-[10px] text-red-400 font-bold">+1 раунд</div>
+
+          <button id="roundPlusBtn" type="button" class="flex-1 h-32 rounded-2xl bg-gradient-to-b from-red-600/20 to-red-950/20 hover:from-red-600/30 border border-red-500/35 flex flex-col items-center justify-center active:scale-95 transition">
+            <span class="text-[11px] text-red-300 font-semibold uppercase tracking-wider">Раунды</span>
+            <span class="text-4xl font-extrabold text-white tabular-nums my-1" id="roundCounterVal">0</span>
+            <span class="text-xs text-red-400 font-bold">+1 раунд</span>
           </button>
         </div>
 
-        <!-- Timer Controls -->
+        <!-- Controls -->
         <div class="grid grid-cols-3 gap-2">
-          <button id="timerStartBtn" type="button" class="py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition active:scale-95">
+          <button id="timerStartBtn" type="button" class="red-glow-btn py-3 rounded-2xl text-white text-xs font-bold transition active:scale-95">
             Старт
           </button>
-          <button id="timerResetBtn" type="button" class="py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-gray-200 text-xs font-semibold transition active:scale-95">
+          <button id="timerResetBtn" type="button" class="py-3 rounded-2xl bg-white/[0.07] hover:bg-white/10 text-zinc-200 text-xs font-semibold transition active:scale-95">
             Сброс
           </button>
-          <button id="timerApplyBtn" type="button" class="py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-red-300 text-xs font-semibold transition active:scale-95">
+          <button id="timerApplyBtn" type="button" class="py-3 rounded-2xl bg-white/[0.07] hover:bg-white/10 text-red-400 text-xs font-semibold transition active:scale-95">
             В результат
           </button>
         </div>
       </div>
 
       <!-- Workout Log Form -->
-      <div class="glass-card rounded-2xl p-4 space-y-4">
+      <div class="ios-card rounded-3xl p-5 space-y-4">
         <div class="flex items-center justify-between">
           <h2 class="text-base font-bold text-white">Запись комплекса</h2>
-          <span class="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/25">WOD + Итог</span>
+          <span class="text-[11px] px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/25 font-semibold">WOD + Итог</span>
         </div>
 
         <form id="workoutForm" class="space-y-4">
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label for="wDate" class="block text-xs text-gray-400 mb-1.5">Дата</label>
-              <input id="wDate" type="date" required class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+              <label for="wDate" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Дата</label>
+              <input id="wDate" type="date" required class="input-ios w-full rounded-2xl px-3.5 py-3 text-sm" />
             </div>
             <div>
-              <label for="wFormat" class="block text-xs text-gray-400 mb-1.5">Формат комплекса</label>
-              <select id="wFormat" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm">
+              <label for="wFormat" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Формат</label>
+              <select id="wFormat" class="input-ios w-full rounded-2xl px-3 py-3 text-sm font-medium">
                 <option value="E2:30OM (каждые 2:30)">E2:30OM (каждые 2:30)</option>
                 <option value="AMRAP 15 мин">AMRAP 15 мин</option>
                 <option value="For Time">For Time</option>
@@ -259,63 +326,63 @@
           </div>
 
           <div>
-            <label for="wTitle" class="block text-xs text-gray-400 mb-1.5">Название / задание комплекса</label>
-            <textarea id="wTitle" rows="3" required placeholder="Например: Каждые 2:30 x 6 раундов: 10 махов гирей 16 кг, 10 швунгов гантелей 12.5 кг, 12 кал гребля" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm leading-relaxed"></textarea>
+            <label for="wTitle" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Задание комплекса</label>
+            <textarea id="wTitle" rows="3" required placeholder="Например: Каждые 2:30 x 6 раундов: 10 махов гирей 16 кг, 10 швунгов гантелей 12.5 кг, 12 кал гребля" class="input-ios w-full rounded-2xl px-3.5 py-3 text-sm leading-relaxed"></textarea>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label for="wResult" class="block text-xs text-gray-400 mb-1.5">Результат (время / раунды)</label>
-              <input id="wResult" type="text" required placeholder="6 раундов / 14:25" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm font-semibold" />
+              <label for="wResult" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Результат</label>
+              <input id="wResult" type="text" required placeholder="6 раундов / 14:25" class="input-ios w-full rounded-2xl px-3.5 py-3 text-sm font-bold" />
             </div>
             <div>
-              <label for="wDuration" class="block text-xs text-gray-400 mb-1.5">Длительность (мин)</label>
-              <input id="wDuration" type="number" min="1" max="240" placeholder="60" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+              <label for="wDuration" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Длительность (мин)</label>
+              <input id="wDuration" type="number" min="1" max="240" placeholder="60" class="input-ios w-full rounded-2xl px-3.5 py-3 text-sm" />
             </div>
           </div>
 
           <!-- Dynamic Exercises -->
           <div class="space-y-2 pt-1">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-medium text-gray-300">Рабочие веса и упражнения</span>
-              <button type="button" id="addExerciseBtn" class="text-xs font-semibold text-red-400 hover:text-red-300 py-1 px-2 rounded-lg bg-red-500/10">
-                + Добавить
+              <span class="text-xs font-semibold text-zinc-300">Рабочие веса и упражнения</span>
+              <button type="button" id="addExerciseBtn" class="text-xs font-semibold text-red-400 hover:text-red-300 py-1 px-2.5 rounded-full bg-red-500/15">
+                + Добавить упражнение
               </button>
             </div>
             <div id="exerciseList" class="space-y-2"></div>
           </div>
 
           <!-- Post-Workout Feedback -->
-          <div class="border-t border-white/10 pt-4 space-y-3">
+          <div class="ios-subcard rounded-2xl p-4 space-y-3.5">
             <h3 class="text-sm font-bold text-white">Обратная связь после тренировки</h3>
 
             <div>
-              <div class="flex justify-between text-xs text-gray-400 mb-1">
-                <label for="wRpe">Тяжесть нагрузки (RPE)</label>
-                <span class="text-red-400 font-semibold" id="wRpeVal">8/10</span>
+              <div class="flex justify-between text-xs text-zinc-300 mb-2">
+                <label for="wRpe" class="font-medium">Тяжесть нагрузки (RPE)</label>
+                <span class="text-red-400 font-bold tabular-nums" id="wRpeVal">8/10</span>
               </div>
-              <input id="wRpe" type="range" min="1" max="10" value="8" class="w-full h-8 cursor-pointer" />
+              <input id="wRpe" type="range" min="1" max="10" value="8" class="ios-slider" />
             </div>
 
             <div>
-              <div class="flex justify-between text-xs text-gray-400 mb-1">
-                <label for="wFeeling">Самочувствие после (10 = отлично)</label>
-                <span class="text-red-400 font-semibold" id="wFeelingVal">8/10</span>
+              <div class="flex justify-between text-xs text-zinc-300 mb-2">
+                <label for="wFeeling" class="font-medium">Самочувствие после (10 = отлично)</label>
+                <span class="text-red-400 font-bold tabular-nums" id="wFeelingVal">8/10</span>
               </div>
-              <input id="wFeeling" type="range" min="1" max="10" value="8" class="w-full h-8 cursor-pointer" />
+              <input id="wFeeling" type="range" min="1" max="10" value="8" class="ios-slider" />
             </div>
 
             <div>
-              <label for="wFeedback" class="block text-xs text-gray-400 mb-1.5">Заметка / обратная связь</label>
-              <textarea id="wFeedback" rows="2" placeholder="Например: уложился в 1:40 из 2:30, запас 50 сек, техника стабильная" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm"></textarea>
+              <label for="wFeedback" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Заметка / обратная связь</label>
+              <textarea id="wFeedback" rows="2" placeholder="Например: уложился в 1:40 из 2:30, запас 50 сек, техника стабильная" class="input-ios w-full rounded-2xl px-3.5 py-2.5 text-sm"></textarea>
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-            <button type="submit" class="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition active:scale-[0.98]">
+            <button type="submit" class="red-glow-btn w-full py-3.5 rounded-2xl text-white font-bold text-sm transition active:scale-[0.98]">
               Сохранить тренировку
             </button>
-            <button type="button" id="saveAndCopyBtn" class="w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-semibold text-sm transition active:scale-[0.98]">
+            <button type="button" id="saveAndCopyBtn" class="w-full py-3.5 rounded-2xl bg-white/[0.08] hover:bg-white/12 border border-white/10 text-white font-semibold text-sm transition active:scale-[0.98]">
               Сохранить и скопировать отчёт
             </button>
           </div>
@@ -325,80 +392,74 @@
 
     <!-- VIEW 3: FOOD / NUTRITION TRACKER -->
     <section id="view-food" class="hidden space-y-4">
-      <!-- Daily Macros Progress -->
-      <div class="glass-card rounded-2xl p-4 space-y-3">
+      <div class="ios-card rounded-3xl p-5 space-y-4">
         <div class="flex items-center justify-between gap-2">
           <div>
-            <h2 class="text-base font-bold text-white">Питание за день</h2>
-            <p class="text-[11px] text-gray-400" id="foodDateLabel">Сегодня</p>
+            <h2 class="text-lg font-bold text-white">Питание за день</h2>
+            <p class="text-xs text-zinc-400" id="foodDateLabel">Сегодня</p>
           </div>
-          <input id="fDate" type="date" class="input-dark rounded-xl px-2.5 py-1.5 text-xs" />
+          <input id="fDate" type="date" class="input-ios rounded-xl px-3 py-2 text-xs font-medium" />
         </div>
 
-        <div class="grid grid-cols-4 gap-2 text-center pt-1">
-          <div class="rounded-xl bg-[#0a0b10] border border-white/10 p-2">
-            <div class="text-[10px] text-gray-400">Ккал</div>
-            <div class="text-sm font-bold text-white mt-0.5" id="macroKcal">0</div>
-            <div class="text-[9px] text-red-400" id="goalKcalLabel">/ 2000</div>
+        <div class="grid grid-cols-4 gap-2 text-center">
+          <div class="ios-subcard rounded-2xl p-2.5">
+            <div class="text-[10px] text-zinc-400 font-medium">Ккал</div>
+            <div class="text-base font-bold text-white mt-0.5 tabular-nums" id="macroKcal">0</div>
+            <div class="text-[9px] text-red-400 font-semibold" id="goalKcalLabel">/ 2000</div>
           </div>
-          <div class="rounded-xl bg-[#0a0b10] border border-white/10 p-2">
-            <div class="text-[10px] text-gray-400">Белки</div>
-            <div class="text-sm font-bold text-white mt-0.5" id="macroProtein">0г</div>
-            <div class="text-[9px] text-gray-400">/ 130г</div>
+          <div class="ios-subcard rounded-2xl p-2.5">
+            <div class="text-[10px] text-zinc-400 font-medium">Белки</div>
+            <div class="text-base font-bold text-white mt-0.5 tabular-nums" id="macroProtein">0г</div>
+            <div class="text-[9px] text-zinc-500">/ 130г</div>
           </div>
-          <div class="rounded-xl bg-[#0a0b10] border border-white/10 p-2">
-            <div class="text-[10px] text-gray-400">Жиры</div>
-            <div class="text-sm font-bold text-white mt-0.5" id="macroFat">0г</div>
-            <div class="text-[9px] text-gray-400">/ 70г</div>
+          <div class="ios-subcard rounded-2xl p-2.5">
+            <div class="text-[10px] text-zinc-400 font-medium">Жиры</div>
+            <div class="text-base font-bold text-white mt-0.5 tabular-nums" id="macroFat">0г</div>
+            <div class="text-[9px] text-zinc-500">/ 70г</div>
           </div>
-          <div class="rounded-xl bg-[#0a0b10] border border-white/10 p-2">
-            <div class="text-[10px] text-gray-400">Углеводы</div>
-            <div class="text-sm font-bold text-white mt-0.5" id="macroCarbs">0г</div>
-            <div class="text-[9px] text-gray-400">/ 210г</div>
+          <div class="ios-subcard rounded-2xl p-2.5">
+            <div class="text-[10px] text-zinc-400 font-medium">Углеводы</div>
+            <div class="text-base font-bold text-white mt-0.5 tabular-nums" id="macroCarbs">0г</div>
+            <div class="text-[9px] text-zinc-500">/ 210г</div>
           </div>
         </div>
 
-        <div class="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-          <div id="kcalProgressBar" class="h-full bg-red-600 transition-all duration-300" style="width: 0%"></div>
+        <div class="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
+          <div id="kcalProgressBar" class="h-full bg-gradient-to-r from-red-500 to-red-600 rounded-full transition-all duration-300" style="width: 0%"></div>
         </div>
       </div>
 
-      <!-- Smart Text Recognition Form -->
-      <div class="glass-card rounded-2xl p-4 space-y-3">
+      <div class="ios-card rounded-3xl p-5 space-y-3.5">
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-bold text-white">Умный ввод еды</h3>
-          <span class="text-[11px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-400">Авто-КБЖУ</span>
+          <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold">Авто-КБЖУ</span>
         </div>
-        <p class="text-[11px] text-gray-400 leading-relaxed">
-          Напишите через запятую продукты и вес, например: <span class="text-gray-200">курица 200г, рис 150г, огурец 100г</span> — приложение само посчитает КБЖУ.
+        <p class="text-[11px] text-zinc-400 leading-relaxed">
+          Напишите продукты через запятую, например: <span class="text-zinc-200">курица 200г, рис 150г, огурец 100г</span>.
         </p>
 
-        <div class="space-y-2">
-          <textarea id="foodSmartInput" rows="2" placeholder="куриная грудка 200г, гречка 150г, яйцо 2 шт" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm"></textarea>
-          <div class="grid grid-cols-2 gap-2">
-            <button id="parseFoodBtn" type="button" class="py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition active:scale-95">
-              Распознать и добавить
-            </button>
-            <button id="toggleManualFoodBtn" type="button" class="py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-gray-200 text-xs font-semibold transition">
-              Ввести вручную
-            </button>
-          </div>
+        <textarea id="foodSmartInput" rows="2" placeholder="куриная грудка 200г, гречка 150г, яйцо 2 шт" class="input-ios w-full rounded-2xl px-3.5 py-3 text-sm"></textarea>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="parseFoodBtn" type="button" class="red-glow-btn py-3 rounded-2xl text-white text-xs font-bold transition active:scale-95">
+            Распознать и добавить
+          </button>
+          <button id="toggleManualFoodBtn" type="button" class="py-3 rounded-2xl bg-white/[0.08] hover:bg-white/12 text-zinc-200 text-xs font-semibold transition">
+            Ввести вручную
+          </button>
         </div>
 
-        <!-- Quick Presets -->
         <div class="space-y-1.5 pt-1">
-          <div class="text-[11px] text-gray-400 font-medium">Быстрые пресеты (1 тап):</div>
+          <div class="text-[11px] text-zinc-400 font-medium">Быстрые пресеты (1 тап):</div>
           <div class="flex flex-wrap gap-1.5" id="foodPresetsContainer"></div>
         </div>
 
-        <!-- Manual Override Form (hidden by default) -->
         <form id="manualFoodForm" class="hidden border-t border-white/10 pt-3 space-y-2.5">
-          <input id="mfName" type="text" placeholder="Название блюда" required class="input-dark w-full rounded-xl px-3 py-2 text-xs" />
+          <input id="mfName" type="text" placeholder="Название блюда" required class="input-ios w-full rounded-xl px-3 py-2.5 text-xs" />
           <div class="grid grid-cols-4 gap-2">
-            <input id="mfKcal" type="number" placeholder="Ккал" required class="input-dark rounded-xl px-2.5 py-2 text-xs" />
-            <input id="mfProtein" type="number" step="0.1" placeholder="Б (г)" required class="input-dark rounded-xl px-2.5 py-2 text-xs" />
-            <input id="mfFat" type="number" step="0.1" placeholder="Ж (г)" required class="input-dark rounded-xl px-2.5 py-2 text-xs" />
-            <input id="mfCarbs" type="number" step="0.1" placeholder="У (г)" required class="input-dark rounded-xl px-2.5 py-2 text-xs" />
+            <input id="mfKcal" type="number" placeholder="Ккал" required class="input-ios rounded-xl px-2.5 py-2 text-xs" />
+            <input id="mfProtein" type="number" step="0.1" placeholder="Б (г)" required class="input-ios rounded-xl px-2.5 py-2 text-xs" />
+            <input id="mfFat" type="number" step="0.1" placeholder="Ж (г)" required class="input-ios rounded-xl px-2.5 py-2 text-xs" />
+            <input id="mfCarbs" type="number" step="0.1" placeholder="У (г)" required class="input-ios rounded-xl px-2.5 py-2 text-xs" />
           </div>
           <button type="submit" class="w-full py-2.5 rounded-xl bg-white/15 hover:bg-white/20 text-white text-xs font-bold">
             Добавить блюдо вручную
@@ -406,8 +467,7 @@
         </form>
       </div>
 
-      <!-- Today's Food List -->
-      <div class="glass-card rounded-2xl p-4 space-y-2.5">
+      <div class="ios-card rounded-3xl p-5 space-y-2.5">
         <h3 class="text-sm font-bold text-white">Съедено за выбранную дату</h3>
         <div id="foodDayList" class="space-y-2"></div>
       </div>
@@ -415,39 +475,39 @@
 
     <!-- VIEW 4: HISTORY, CHART & BACKUP -->
     <section id="view-history" class="hidden space-y-4">
-      <div class="glass-card rounded-2xl p-4 space-y-3">
+      <div class="ios-card rounded-3xl p-5 space-y-3">
         <div class="flex items-center justify-between">
           <h2 class="text-sm font-bold text-white">Динамика веса (кг)</h2>
-          <span class="text-[11px] text-gray-400" id="chartPointsLabel">Последние записи</span>
+          <span class="text-[11px] text-zinc-400" id="chartPointsLabel">Последние записи</span>
         </div>
         <div class="relative h-56 w-full">
           <canvas id="weightChart"></canvas>
         </div>
       </div>
 
-      <div class="glass-card rounded-2xl p-4 space-y-3">
+      <div class="ios-card rounded-3xl p-5 space-y-3">
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <h2 class="text-sm font-bold text-white">История по датам</h2>
           <div class="flex gap-1.5 text-xs flex-wrap">
-            <button type="button" data-filter="all" class="filter-btn px-2.5 py-1.5 rounded-lg bg-red-600 text-white font-semibold">Все</button>
-            <button type="button" data-filter="workout" class="filter-btn px-2.5 py-1.5 rounded-lg bg-white/5 text-gray-300">Тренировки</button>
-            <button type="button" data-filter="morning" class="filter-btn px-2.5 py-1.5 rounded-lg bg-white/5 text-gray-300">Утро</button>
-            <button type="button" data-filter="food" class="filter-btn px-2.5 py-1.5 rounded-lg bg-white/5 text-gray-300">Еда</button>
+            <button type="button" data-filter="all" class="filter-btn px-3 py-1.5 rounded-full bg-red-600 text-white font-semibold">Все</button>
+            <button type="button" data-filter="workout" class="filter-btn px-3 py-1.5 rounded-full bg-white/[0.06] text-zinc-300">Тренировки</button>
+            <button type="button" data-filter="morning" class="filter-btn px-3 py-1.5 rounded-full bg-white/[0.06] text-zinc-300">Утро</button>
+            <button type="button" data-filter="food" class="filter-btn px-3 py-1.5 rounded-full bg-white/[0.06] text-zinc-300">Еда</button>
           </div>
         </div>
         <div id="historyFeed" class="space-y-2.5"></div>
       </div>
 
-      <div class="glass-card rounded-2xl p-4 space-y-3">
+      <div class="ios-card rounded-3xl p-5 space-y-3">
         <h2 class="text-sm font-bold text-white">Резервная копия на iPhone</h2>
-        <p class="text-xs text-gray-400 leading-relaxed">
-          История тренировок, веса и питания хранится на вашем iPhone. Раз в неделю сохраняйте JSON-бэкап в «Файлы», чтобы данные не пропали при очистке кэша Safari.
+        <p class="text-xs text-zinc-400 leading-relaxed">
+          Данные хранятся на вашем iPhone. Раз в неделю сохраняйте JSON-бэкап в «Файлы», чтобы история не пропала при очистке кэша Safari.
         </p>
         <div class="grid grid-cols-2 gap-2.5">
-          <button type="button" id="exportJsonBtn" class="py-2.5 px-3 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/35 text-red-300 text-xs font-semibold transition">
+          <button type="button" id="exportJsonBtn" class="py-3 px-3 rounded-2xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/35 text-red-300 text-xs font-semibold transition">
             Скачать JSON-бэкап
           </button>
-          <label class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold text-center cursor-pointer transition">
+          <label class="py-3 px-3 rounded-2xl bg-white/[0.08] hover:bg-white/12 border border-white/10 text-white text-xs font-semibold text-center cursor-pointer transition">
             Восстановить из JSON
             <input type="file" id="importJsonInput" accept=".json,application/json" class="hidden" />
           </label>
@@ -456,7 +516,7 @@
           <button type="button" id="clearDemoBtn" class="text-xs text-red-400 hover:text-red-300 underline underline-offset-2">
             Очистить все записи
           </button>
-          <button type="button" id="loadDemoBtn" class="text-xs text-gray-400 hover:text-gray-200 underline underline-offset-2">
+          <button type="button" id="loadDemoBtn" class="text-xs text-zinc-400 hover:text-zinc-200 underline underline-offset-2">
             Загрузить пример
           </button>
         </div>
@@ -465,33 +525,32 @@
 
   </main>
 
-  <!-- Bottom Tab Navigation (4 Tabs) -->
-  <nav class="tab-bar fixed bottom-0 left-0 right-0 z-40">
+  <!-- Native iOS Frosted Tab Bar -->
+  <nav class="ios-tab-bar fixed bottom-0 left-0 right-0 z-40">
     <div class="max-w-xl mx-auto grid grid-cols-4 h-16">
       <button type="button" data-tab="morning" class="nav-tab flex flex-col items-center justify-center gap-1 text-red-500">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-        <span class="text-[11px] font-semibold">Утро</span>
+        <span class="text-[10px] font-semibold">Утро</span>
       </button>
-      <button type="button" data-tab="workout" class="nav-tab flex flex-col items-center justify-center gap-1 text-gray-400">
+      <button type="button" data-tab="workout" class="nav-tab flex flex-col items-center justify-center gap-1 text-zinc-500">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        <span class="text-[11px] font-semibold">Тренировка</span>
+        <span class="text-[10px] font-semibold">Тренировка</span>
       </button>
-      <button type="button" data-tab="food" class="nav-tab flex flex-col items-center justify-center gap-1 text-gray-400">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M5 6v14a2 2 0 002 2h10a2 2 0 002-2V6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-        <span class="text-[11px] font-semibold">Еда</span>
+      <button type="button" data-tab="food" class="nav-tab flex flex-col items-center justify-center gap-1 text-zinc-500">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 3v7a2 2 0 002 2h0a2 2 0 002-2V3M9 12v9M16 3c0 3 2 5 2 8v10M16 3v18"/></svg>
+        <span class="text-[10px] font-semibold">Еда</span>
       </button>
-      <button type="button" data-tab="history" class="nav-tab flex flex-col items-center justify-center gap-1 text-gray-400">
+      <button type="button" data-tab="history" class="nav-tab flex flex-col items-center justify-center gap-1 text-zinc-500">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-        <span class="text-[11px] font-semibold">История</span>
+        <span class="text-[10px] font-semibold">История</span>
       </button>
     </div>
   </nav>
 
   <!-- Toast Notification -->
-  <div id="toastContainer" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-[90%] max-w-md flex flex-col items-center gap-2"></div>
+  <div id="toastContainer" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-[90%] max-w-md flex flex-col items-center gap-2"></div>
 
   <script>
-    // --- PWA Manifest Registration ---
     (function registerManifest() {
       try {
         const manifest = {
@@ -499,10 +558,10 @@
           short_name: "WOD Tracker",
           start_url: ".",
           display: "standalone",
-          background_color: "#08090c",
-          theme_color: "#08090c",
+          background_color: "#000000",
+          theme_color: "#000000",
           icons: [{
-            src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%2308090c'/%3E%3Cpath d='M110 256h56l36-96 52 192 44-128 36 32h108' fill='none' stroke='%23ef4444' stroke-width='28' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
+            src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23000000'/%3E%3Ccircle cx='256' cy='256' r='170' fill='none' stroke='%23ef4444' stroke-width='34' stroke-dasharray='800 1070' stroke-linecap='round' transform='rotate(-90 256 256)'/%3E%3Cpath d='M160 262h40l28-68 40 136 34-96 22 28h34' fill='none' stroke='%23ffffff' stroke-width='20' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
             sizes: "512x512",
             type: "image/svg+xml"
           }]
@@ -515,7 +574,6 @@
       } catch (e) {}
     })();
 
-    // --- State & Storage ---
     const STORAGE_KEY = "cf_wod_tracker_v2";
     const LEGACY_KEY = "cf_wod_tracker_v1";
     let state = { mornings: [], workouts: [], foods: [] };
@@ -527,15 +585,13 @@
 
     function todayISO() {
       const d = new Date();
-      const offset = d.getTimezoneOffset();
-      return new Date(d.getTime() - offset * 60000).toISOString().split("T")[0];
+      return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split("T")[0];
     }
 
     function dateOffsetISO(daysAgo) {
       const d = new Date();
       d.setDate(d.getDate() - daysAgo);
-      const offset = d.getTimezoneOffset();
-      return new Date(d.getTime() - offset * 60000).toISOString().split("T")[0];
+      return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split("T")[0];
     }
 
     function getDemoData() {
@@ -596,15 +652,14 @@
       }
     }
 
-    // --- UI Helpers ---
     function showToast(message, type = "success") {
       const container = document.getElementById("toastContainer");
       const el = document.createElement("div");
-      const color = type === "error" ? "bg-red-700 text-white" : "bg-red-600 text-white";
-      el.className = `toast-enter px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg ${color}`;
+      const color = type === "error" ? "bg-red-700 text-white" : "bg-zinc-900 text-white border border-red-500/40";
+      el.className = `toast-enter px-4 py-2.5 rounded-full text-xs font-semibold shadow-2xl ${color}`;
       el.textContent = message;
       container.appendChild(el);
-      setTimeout(() => el.remove(), 2600);
+      setTimeout(() => el.remove(), 2500);
     }
 
     function escapeHtml(str) {
@@ -617,9 +672,7 @@
 
     function copyTextToClipboard(text) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => {
-          showToast("Отчёт скопирован для ветки!");
-        }).catch(() => fallbackCopy(text));
+        navigator.clipboard.writeText(text).then(() => showToast("Отчёт скопирован для ветки!")).catch(() => fallbackCopy(text));
       } else {
         fallbackCopy(text);
       }
@@ -642,6 +695,34 @@
       document.body.removeChild(ta);
     }
 
+    // --- Stepper Buttons & Readiness Ring ---
+    function updateReadinessRing() {
+      const sq = parseInt(document.getElementById("mSleepQuality").value, 10);
+      const en = parseInt(document.getElementById("mEnergy").value, 10);
+      const rc = parseInt(document.getElementById("mRecovery").value, 10);
+      const avg = (sq + en + rc) / 3;
+      const circ = 119.4;
+      document.getElementById("readinessRing").setAttribute("stroke-dashoffset", String(circ - (avg / 10) * circ));
+      document.getElementById("readinessScoreText").textContent = avg.toFixed(1);
+    }
+
+    document.getElementById("weightMinusBtn").addEventListener("click", () => {
+      const el = document.getElementById("mWeight");
+      el.value = (Math.max(30, parseFloat(el.value || "85") - 0.1)).toFixed(1);
+    });
+    document.getElementById("weightPlusBtn").addEventListener("click", () => {
+      const el = document.getElementById("mWeight");
+      el.value = (Math.min(250, parseFloat(el.value || "85") + 0.1)).toFixed(1);
+    });
+    document.getElementById("sleepMinusBtn").addEventListener("click", () => {
+      const el = document.getElementById("mSleepHours");
+      el.value = (Math.max(0, parseFloat(el.value || "6.5") - 0.5)).toFixed(1);
+    });
+    document.getElementById("sleepPlusBtn").addEventListener("click", () => {
+      const el = document.getElementById("mSleepHours");
+      el.value = (Math.min(16, parseFloat(el.value || "6.5") + 0.5)).toFixed(1);
+    });
+
     // --- Navigation ---
     function switchTab(tab) {
       currentTab = tab;
@@ -651,7 +732,7 @@
       document.querySelectorAll(".nav-tab").forEach((btn) => {
         const active = btn.dataset.tab === tab;
         btn.classList.toggle("text-red-500", active);
-        btn.classList.toggle("text-gray-400", !active);
+        btn.classList.toggle("text-zinc-500", !active);
       });
       if (tab === "food") renderFoodDay();
       if (tab === "history") {
@@ -664,7 +745,6 @@
       btn.addEventListener("click", () => switchTab(btn.dataset.tab));
     });
 
-    // --- Range Sliders ---
     [
       ["mSleepQuality", "mSleepQualityVal"],
       ["mEnergy", "mEnergyVal"],
@@ -674,10 +754,13 @@
     ].forEach(([inputId, labelId]) => {
       const input = document.getElementById(inputId);
       const label = document.getElementById(labelId);
-      input.addEventListener("input", () => { label.textContent = `${input.value}/10`; });
+      input.addEventListener("input", () => {
+        label.textContent = `${input.value}/10`;
+        if (inputId.startsWith("m")) updateReadinessRing();
+      });
     });
 
-    // --- WOD Timer (E2:30OM / AMRAP 15:00 / For Time) ---
+    // --- Circular WOD Timer ---
     let timerMode = "e230";
     let timerRunning = false;
     let timerHandle = null;
@@ -734,18 +817,27 @@
     function updateTimerUI(totalRounds, intervalSec, amrapMin) {
       const disp = document.getElementById("timerDisplay");
       const status = document.getElementById("timerStatusLabel");
+      const ring = document.getElementById("timerProgressRing");
+      const circ = 326.7;
+      let pct = 1;
+
       if (timerMode === "e230") {
         disp.textContent = fmtMMSS(roundRemainingSec);
+        pct = intervalSec > 0 ? roundRemainingSec / intervalSec : 1;
         status.textContent = timerRunning
           ? `Раунд ${currentRoundIdx} из ${totalRounds}`
           : `Готов • Интервал ${fmtMMSS(intervalSec)} × ${totalRounds}`;
       } else if (timerMode === "amrap") {
         disp.textContent = fmtMMSS(amrapRemainingSec);
-        status.textContent = timerRunning ? `AMRAP • Идёт работа` : `Готов • AMRAP ${amrapMin}:00`;
+        const total = amrapMin * 60;
+        pct = total > 0 ? amrapRemainingSec / total : 1;
+        status.textContent = timerRunning ? "AMRAP • Идёт работа" : `Готов • AMRAP ${amrapMin}:00`;
       } else {
         disp.textContent = fmtMMSS(elapsedSec);
+        pct = (elapsedSec % 60) / 60;
         status.textContent = timerRunning ? "Секундомер • В работе" : "Готов • For Time";
       }
+      ring.setAttribute("stroke-dashoffset", String(circ * (1 - pct)));
     }
 
     document.querySelectorAll(".tmode-btn").forEach((btn) => {
@@ -754,8 +846,8 @@
         document.querySelectorAll(".tmode-btn").forEach((b) => {
           const active = b.dataset.tmode === timerMode;
           b.className = active
-            ? "tmode-btn py-2 rounded-xl bg-red-600 text-white font-bold"
-            : "tmode-btn py-2 rounded-xl bg-white/5 text-gray-300 font-semibold";
+            ? "tmode-btn py-2 rounded-xl bg-red-600 text-white font-bold shadow"
+            : "tmode-btn py-2 rounded-xl text-zinc-400 font-semibold";
         });
         document.getElementById("timerIntervalWrap").classList.toggle("hidden", timerMode !== "e230");
         document.getElementById("timerRoundsWrap").classList.toggle("hidden", timerMode !== "e230");
@@ -851,10 +943,8 @@
       } else {
         resInput.value = fmtMMSS(elapsedSec);
       }
-      if (elapsedSec > 0) {
-        durInput.value = String(Math.max(1, Math.round(elapsedSec / 60)));
-      }
-      showToast("Результат подставлен в форму!");
+      if (elapsedSec > 0) durInput.value = String(Math.max(1, Math.round(elapsedSec / 60)));
+      showToast("Результат подставлен!");
     });
 
     // --- Dynamic Exercises ---
@@ -863,17 +953,17 @@
       const row = document.createElement("div");
       row.className = "exercise-row grid grid-cols-12 gap-2 items-center";
       row.innerHTML = `
-        <input type="text" placeholder="Упражнение" value="${escapeHtml(name)}" class="ex-name input-dark col-span-5 rounded-xl px-2.5 py-2 text-xs" />
-        <input type="text" placeholder="Вес" value="${escapeHtml(weight)}" class="ex-weight input-dark col-span-3 rounded-xl px-2.5 py-2 text-xs" />
-        <input type="text" placeholder="Повт" value="${escapeHtml(reps)}" class="ex-reps input-dark col-span-3 rounded-xl px-2.5 py-2 text-xs" />
-        <button type="button" class="remove-ex col-span-1 h-8 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-300 text-xs font-bold">×</button>
+        <input type="text" placeholder="Упражнение" value="${escapeHtml(name)}" class="ex-name input-ios col-span-5 rounded-xl px-2.5 py-2.5 text-xs" />
+        <input type="text" placeholder="Вес" value="${escapeHtml(weight)}" class="ex-weight input-ios col-span-3 rounded-xl px-2.5 py-2.5 text-xs" />
+        <input type="text" placeholder="Повт" value="${escapeHtml(reps)}" class="ex-reps input-ios col-span-3 rounded-xl px-2.5 py-2.5 text-xs" />
+        <button type="button" class="remove-ex col-span-1 h-9 rounded-xl bg-white/[0.06] hover:bg-red-500/20 text-zinc-400 hover:text-red-300 text-sm font-bold">×</button>
       `;
       row.querySelector(".remove-ex").addEventListener("click", () => row.remove());
       list.appendChild(row);
     }
     document.getElementById("addExerciseBtn").addEventListener("click", () => addExerciseRow());
 
-    // --- Morning Form Submit ---
+    // --- Morning Form ---
     document.getElementById("morningForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const entry = {
@@ -938,7 +1028,7 @@
       if (saved) copyTextToClipboard(formatReport(saved));
     });
 
-    // --- Smart Food Recognition Dictionary (per 100g or per 1 unit) ---
+    // --- Food Dictionary & Parser ---
     const FOOD_DB = [
       { keys: ["куриная грудка", "курица", "филе куриное", "грудка"], unit: "г", per100: { kcal: 113, p: 23.6, f: 1.9, c: 0.4 } },
       { keys: ["индейка", "филе индейки"], unit: "г", per100: { kcal: 115, p: 24, f: 1.5, c: 0 } },
@@ -988,8 +1078,7 @@
         const numOnly = lower.match(/(\d+(?:[.,]\d+)?)/);
 
         if (gMatch) {
-          const grams = parseFloat(gMatch[1].replace(",", "."));
-          const factor = grams / 100;
+          const factor = parseFloat(gMatch[1].replace(",", ".")) / 100;
           totalKcal += found.per100.kcal * factor;
           totalP += found.per100.p * factor;
           totalF += found.per100.f * factor;
@@ -1020,7 +1109,6 @@
           totalF += found.perUnit.f;
           totalC += found.perUnit.c;
         } else {
-          // Default 150g portion
           totalKcal += found.per100.kcal * 1.5;
           totalP += found.per100.p * 1.5;
           totalF += found.per100.f * 1.5;
@@ -1061,7 +1149,7 @@
       }
       const res = parseSmartFood(raw);
       if (!res.matchedAny) {
-        showToast("Не узнал продукты — нажмите «Ввести вручную»", "error");
+        showToast("Не узнал продукты — введите вручную", "error");
         document.getElementById("manualFoodForm").classList.remove("hidden");
         document.getElementById("mfName").value = raw;
         return;
@@ -1096,7 +1184,7 @@
       FOOD_PRESETS.forEach((p) => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "text-[11px] px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-red-600/20 border border-white/10 text-gray-200 transition active:scale-95";
+        btn.className = "text-[11px] px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-red-600/20 border border-white/10 text-zinc-200 transition active:scale-95";
         btn.textContent = `+ ${p.name}`;
         btn.addEventListener("click", () => {
           addFoodItem(p.name, p.kcal, p.protein, p.fat, p.carbs);
@@ -1123,23 +1211,21 @@
       document.getElementById("macroProtein").textContent = `${Math.round(p)}г`;
       document.getElementById("macroFat").textContent = `${Math.round(f)}г`;
       document.getElementById("macroCarbs").textContent = `${Math.round(c)}г`;
-
-      const pct = Math.min(100, Math.round((k / 2000) * 100));
-      document.getElementById("kcalProgressBar").style.width = `${pct}%`;
+      document.getElementById("kcalProgressBar").style.width = `${Math.min(100, Math.round((k / 2000) * 100))}%`;
 
       const container = document.getElementById("foodDayList");
       if (list.length === 0) {
-        container.innerHTML = `<div class="text-xs text-gray-500 text-center py-4">За эту дату приёмов пищи пока нет.</div>`;
+        container.innerHTML = `<div class="text-xs text-zinc-500 text-center py-4">За эту дату приёмов пищи пока нет.</div>`;
         return;
       }
       container.innerHTML = "";
       list.forEach((item) => {
         const row = document.createElement("div");
-        row.className = "rounded-xl bg-[#0a0b10] border border-white/10 p-2.5 flex items-center justify-between gap-2";
+        row.className = "ios-subcard rounded-2xl p-3 flex items-center justify-between gap-2";
         row.innerHTML = `
           <div>
             <div class="text-xs font-semibold text-white">${escapeHtml(item.name)}</div>
-            <div class="text-[11px] text-gray-400">${item.kcal} ккал • Б ${item.protein}г • Ж ${item.fat}г • У ${item.carbs}г</div>
+            <div class="text-[11px] text-zinc-400 mt-0.5">${item.kcal} ккал • Б ${item.protein}г • Ж ${item.fat}г • У ${item.carbs}г</div>
           </div>
           <button type="button" class="del-food-btn text-xs text-red-400 font-semibold px-2 py-1">Удалить</button>
         `;
@@ -1231,7 +1317,7 @@
             pointBackgroundColor: "#ef4444",
             pointRadius: 4,
             fill: true,
-            tension: 0.3
+            tension: 0.35
           }]
         },
         options: {
@@ -1239,8 +1325,8 @@
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            x: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#9ca3af", font: { size: 11 } } },
-            y: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#9ca3af", font: { size: 11 } } }
+            x: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#a1a1aa", font: { size: 11 } } },
+            y: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#a1a1aa", font: { size: 11 } } }
           }
         }
       });
@@ -1253,8 +1339,8 @@
         document.querySelectorAll(".filter-btn").forEach((b) => {
           const active = b.dataset.filter === historyFilter;
           b.className = active
-            ? "filter-btn px-2.5 py-1.5 rounded-lg bg-red-600 text-white font-semibold"
-            : "filter-btn px-2.5 py-1.5 rounded-lg bg-white/5 text-gray-300";
+            ? "filter-btn px-3 py-1.5 rounded-full bg-red-600 text-white font-semibold"
+            : "filter-btn px-3 py-1.5 rounded-full bg-white/[0.06] text-zinc-300";
         });
         renderHistory();
       });
@@ -1275,34 +1361,34 @@
       items.sort((a, b) => b.date.localeCompare(a.date));
 
       if (items.length === 0) {
-        feed.innerHTML = `<div class="text-xs text-gray-500 text-center py-6">Пока нет записей в этом разделе.</div>`;
+        feed.innerHTML = `<div class="text-xs text-zinc-500 text-center py-6">Пока нет записей в этом разделе.</div>`;
         return;
       }
 
       feed.innerHTML = "";
       items.forEach((item) => {
         const card = document.createElement("div");
-        card.className = "rounded-xl bg-[#0a0b10] border border-white/10 p-3 space-y-2";
+        card.className = "ios-subcard rounded-2xl p-3.5 space-y-2";
 
         if (item.type === "workout") {
           const w = item.data;
           card.innerHTML = `
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
-                <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-red-600/20 text-red-400">${escapeHtml(w.format)}</span>
-                <span class="text-xs font-semibold text-gray-300">${escapeHtml(w.date)}</span>
+                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-red-600/20 text-red-400">${escapeHtml(w.format)}</span>
+                <span class="text-xs font-semibold text-zinc-300">${escapeHtml(w.date)}</span>
               </div>
               <span class="text-xs font-bold text-white">${escapeHtml(w.result)}</span>
             </div>
-            <p class="text-xs text-gray-200 leading-relaxed">${escapeHtml(w.title)}</p>
-            <div class="flex items-center justify-between text-[11px] text-gray-400 pt-1 border-t border-white/5">
+            <p class="text-xs text-zinc-200 leading-relaxed">${escapeHtml(w.title)}</p>
+            <div class="flex items-center justify-between text-[11px] text-zinc-400 pt-1.5 border-t border-white/[0.06]">
               <span>RPE: <strong class="text-white">${w.rpe}/10</strong> • Самочувствие: <strong class="text-white">${w.feeling}/10</strong></span>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-3">
                 <button type="button" class="copy-w-btn text-red-400 font-semibold">Копировать</button>
-                <button type="button" class="del-btn text-gray-400 hover:text-red-400 font-semibold">${pendingDeleteId === w.id ? "Точно?" : "Удалить"}</button>
+                <button type="button" class="del-btn text-zinc-400 hover:text-red-400 font-semibold">${pendingDeleteId === w.id ? "Точно?" : "Удалить"}</button>
               </div>
             </div>
-            ${w.feedback ? `<p class="text-[11px] text-gray-400 italic">«${escapeHtml(w.feedback)}»</p>` : ""}
+            ${w.feedback ? `<p class="text-[11px] text-zinc-400 italic">«${escapeHtml(w.feedback)}»</p>` : ""}
           `;
           card.querySelector(".copy-w-btn").addEventListener("click", () => copyTextToClipboard(formatReport(w)));
           card.querySelector(".del-btn").addEventListener("click", () => handleDelete("workout", w.id));
@@ -1311,16 +1397,16 @@
           card.innerHTML = `
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
-                <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/10 text-gray-200">Утро</span>
-                <span class="text-xs font-semibold text-gray-300">${escapeHtml(m.date)}</span>
+                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-white/10 text-zinc-200">Утро</span>
+                <span class="text-xs font-semibold text-zinc-300">${escapeHtml(m.date)}</span>
               </div>
               <span class="text-xs font-bold text-red-400">${m.weight.toFixed(1)} кг</span>
             </div>
-            <div class="flex items-center justify-between text-[11px] text-gray-400">
+            <div class="flex items-center justify-between text-[11px] text-zinc-400">
               <span>Сон: ${m.sleepHours}ч (${m.sleepQuality}/10) • Энергия: ${m.energy}/10 • Восст: ${m.recovery}/10</span>
-              <button type="button" class="del-btn text-gray-400 hover:text-red-400 font-semibold">${pendingDeleteId === m.id ? "Точно?" : "Удалить"}</button>
+              <button type="button" class="del-btn text-zinc-400 hover:text-red-400 font-semibold">${pendingDeleteId === m.id ? "Точно?" : "Удалить"}</button>
             </div>
-            ${m.note ? `<p class="text-[11px] text-gray-400 italic">«${escapeHtml(m.note)}»</p>` : ""}
+            ${m.note ? `<p class="text-[11px] text-zinc-400 italic">«${escapeHtml(m.note)}»</p>` : ""}
           `;
           card.querySelector(".del-btn").addEventListener("click", () => handleDelete("morning", m.id));
         } else {
@@ -1328,14 +1414,14 @@
           card.innerHTML = `
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
-                <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-red-950 text-red-300 border border-red-800/40">Еда</span>
-                <span class="text-xs font-semibold text-gray-300">${escapeHtml(f.date)}</span>
+                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-red-950 text-red-300 border border-red-800/40">Еда</span>
+                <span class="text-xs font-semibold text-zinc-300">${escapeHtml(f.date)}</span>
               </div>
               <span class="text-xs font-bold text-white">${f.kcal} ккал</span>
             </div>
-            <div class="flex items-center justify-between text-[11px] text-gray-300">
+            <div class="flex items-center justify-between text-[11px] text-zinc-300">
               <span>${escapeHtml(f.name)} (Б ${f.protein}г / Ж ${f.fat}г / У ${f.carbs}г)</span>
-              <button type="button" class="del-btn text-gray-400 hover:text-red-400 font-semibold">${pendingDeleteId === f.id ? "Точно?" : "Удалить"}</button>
+              <button type="button" class="del-btn text-zinc-400 hover:text-red-400 font-semibold">${pendingDeleteId === f.id ? "Точно?" : "Удалить"}</button>
             </div>
           `;
           card.querySelector(".del-btn").addEventListener("click", () => handleDelete("food", f.id));
@@ -1443,6 +1529,7 @@
     renderPresets();
     loadState();
     renderStats();
+    updateReadinessRing();
     resetTimer();
   </script>
 </body>
