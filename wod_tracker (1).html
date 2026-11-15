@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>WOD Tracker — Кроссфит, питание и самочувствие</title>
+
+  <!-- PWA / iOS Home Screen Meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="WOD Tracker" />
+  <meta name="theme-color" content="#08090c" />
+
+  <!-- Inline SVG App Icon (Black & Red) -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%2308090c'/%3E%3Crect x='12' y='12' width='156' height='156' rx='32' fill='%2312141b' stroke='%23ef4444' stroke-width='4'/%3E%3Cpath d='M45 90h18l12-30 18 60 15-42 12 12h15' fill='none' stroke='%23ef4444' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    * {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background-color: #08090c;
+      color: #f3f4f6;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: calc(88px + env(safe-area-inset-bottom));
+      overscroll-behavior-y: contain;
+    }
+    .glass-card {
+      background: #12141b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .input-dark {
+      background: #0a0b10;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f9fafb;
+      transition: border-color 0.15s ease;
+    }
+    .input-dark:focus {
+      outline: none;
+      border-color: #ef4444;
+    }
+    input[type="range"] {
+      accent-color: #ef4444;
+    }
+    .tab-bar {
+      background: rgba(12, 13, 19, 0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .toast-enter {
+      animation: slideUp 0.22s ease-out forwards;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen antialiased selection:bg-red-500/30">
+
+  <!-- Top Header -->
+  <header class="sticky top-0 z-30 bg-[#08090c]/92 backdrop-blur-md border-b border-white/10">
+    <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-red-600/20 border border-red-500/40 flex items-center justify-center text-red-500 font-extrabold text-sm">
+          CF
+        </div>
+        <div>
+          <h1 class="text-base font-bold tracking-tight text-white leading-tight">WOD Tracker</h1>
+          <p class="text-[11px] text-gray-400" id="headerSubtitle">Кроссфит • Еда • Самочувствие</p>
+        </div>
+      </div>
+      <button id="quickCopyBtn" type="button" class="px-3 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-400 text-xs font-semibold transition active:scale-95">
+        Копировать отчёт
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-xl mx-auto px-4 pt-4 space-y-4">
+
+    <!-- Quick Stats Strip -->
+    <section class="grid grid-cols-3 gap-2.5">
+      <div class="glass-card rounded-2xl p-3">
+        <div class="text-[11px] text-gray-400 font-medium">Вес</div>
+        <div class="text-lg font-bold text-white mt-0.5" id="statLastWeight">—</div>
+        <div class="text-[10px] text-red-400 mt-0.5" id="statWeightAvg">7д ср: —</div>
+      </div>
+      <div class="glass-card rounded-2xl p-3">
+        <div class="text-[11px] text-gray-400 font-medium">Тренировок</div>
+        <div class="text-lg font-bold text-white mt-0.5" id="statWorkoutsCount">0</div>
+        <div class="text-[10px] text-gray-400 mt-0.5" id="statLastWorkout">Нет записей</div>
+      </div>
+      <div class="glass-card rounded-2xl p-3">
+        <div class="text-[11px] text-gray-400 font-medium">Ккал сегодня</div>
+        <div class="text-lg font-bold text-white mt-0.5" id="statTodayKcal">0</div>
+        <div class="text-[10px] text-red-400 mt-0.5" id="statTodayProtein">Белок: 0 г</div>
+      </div>
+    </section>
+
+    <!-- VIEW 1: MORNING CHECK-IN -->
+    <section id="view-morning" class="space-y-4">
+      <div class="glass-card rounded-2xl p-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-bold text-white">Утренний чек-ин</h2>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/25">20 сек</span>
+        </div>
+
+        <form id="morningForm" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="mDate" class="block text-xs text-gray-400 mb-1.5">Дата</label>
+              <input id="mDate" type="date" required class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+            </div>
+            <div>
+              <label for="mWeight" class="block text-xs text-gray-400 mb-1.5">Вес утром (кг)</label>
+              <input id="mWeight" type="number" step="0.1" min="30" max="250" placeholder="85.4" required class="input-dark w-full rounded-xl px-3 py-2.5 text-sm font-semibold" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="mSleepHours" class="block text-xs text-gray-400 mb-1.5">Сон (часов)</label>
+              <input id="mSleepHours" type="number" step="0.5" min="0" max="16" placeholder="6.5" required class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+            </div>
+            <div>
+              <div class="flex justify-between text-xs text-gray-400 mb-1.5">
+                <label for="mSleepQuality">Качество сна</label>
+                <span class="text-red-400 font-semibold" id="mSleepQualityVal">7/10</span>
+              </div>
+              <input id="mSleepQuality" type="range" min="1" max="10" value="7" class="w-full h-9 cursor-pointer" />
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-1">
+            <div>
+              <div class="flex justify-between text-xs text-gray-400 mb-1">
+                <label for="mEnergy">Энергия и бодрость</label>
+                <span class="text-red-400 font-semibold" id="mEnergyVal">7/10</span>
+              </div>
+              <input id="mEnergy" type="range" min="1" max="10" value="7" class="w-full h-8 cursor-pointer" />
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs text-gray-400 mb-1">
+                <label for="mRecovery">Восстановление мышц (10 = свежий)</label>
+                <span class="text-red-400 font-semibold" id="mRecoveryVal">7/10</span>
+              </div>
+              <input id="mRecovery" type="range" min="1" max="10" value="7" class="w-full h-8 cursor-pointer" />
+            </div>
+          </div>
+
+          <div>
+            <label for="mNote" class="block text-xs text-gray-400 mb-1.5">Утреннее самочувствие (опционально)</label>
+            <input id="mNote" type="text" placeholder="Например: немного забиты ноги после приседа" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+          </div>
+
+          <button type="submit" class="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition active:scale-[0.98]">
+            Сохранить утренний чек-ин
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- VIEW 2: WORKOUT LOG + WOD TIMER + FEEDBACK -->
+    <section id="view-workout" class="hidden space-y-4">
+
+      <!-- WOD Timer Card -->
+      <div class="glass-card rounded-2xl p-4 space-y-3 border border-red-500/20">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-white">WOD Таймер</h2>
+          <button id="timerMuteBtn" type="button" class="text-[11px] px-2.5 py-1 rounded-lg bg-white/5 text-gray-300 border border-white/10">
+            Звук: ВКЛ
+          </button>
+        </div>
+
+        <!-- Mode Switcher -->
+        <div class="grid grid-cols-3 gap-1.5 text-xs">
+          <button type="button" data-tmode="e230" class="tmode-btn py-2 rounded-xl bg-red-600 text-white font-bold">Каждые 2:30</button>
+          <button type="button" data-tmode="amrap" class="tmode-btn py-2 rounded-xl bg-white/5 text-gray-300 font-semibold">AMRAP 15:00</button>
+          <button type="button" data-tmode="fortime" class="tmode-btn py-2 rounded-xl bg-white/5 text-gray-300 font-semibold">Секундомер</button>
+        </div>
+
+        <!-- Timer Config (E2:30 or AMRAP) -->
+        <div id="timerConfigRow" class="grid grid-cols-2 gap-2.5 text-xs">
+          <div id="timerIntervalWrap">
+            <label for="timerIntervalSec" class="block text-[11px] text-gray-400 mb-1">Интервал (сек)</label>
+            <input id="timerIntervalSec" type="number" min="10" max="600" value="150" class="input-dark w-full rounded-xl px-3 py-2 text-xs font-semibold" />
+          </div>
+          <div id="timerRoundsWrap">
+            <label for="timerTotalRounds" class="block text-[11px] text-gray-400 mb-1">Раундов</label>
+            <input id="timerTotalRounds" type="number" min="1" max="50" value="6" class="input-dark w-full rounded-xl px-3 py-2 text-xs font-semibold" />
+          </div>
+          <div id="timerAmrapWrap" class="hidden col-span-2">
+            <label for="timerAmrapMin" class="block text-[11px] text-gray-400 mb-1">Длительность AMRAP (минут)</label>
+            <input id="timerAmrapMin" type="number" min="1" max="90" value="15" class="input-dark w-full rounded-xl px-3 py-2 text-xs font-semibold" />
+          </div>
+        </div>
+
+        <!-- Timer Display + Round Counter -->
+        <div class="rounded-2xl bg-[#0a0b10] border border-white/10 p-4 flex items-center justify-between gap-3">
+          <div>
+            <div class="text-[11px] text-red-400 font-semibold uppercase tracking-wider" id="timerStatusLabel">Готов • E2:30 (6 рд)</div>
+            <div class="text-4xl font-extrabold tracking-tight text-white tabular-nums mt-0.5" id="timerDisplay">02:30</div>
+          </div>
+          <button id="roundPlusBtn" type="button" class="px-4 py-3 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-center active:scale-95 transition">
+            <div class="text-[10px] text-red-300 font-medium">Раунды</div>
+            <div class="text-xl font-extrabold text-white" id="roundCounterVal">0</div>
+            <div class="text-[10px] text-red-400 font-bold">+1 раунд</div>
+          </button>
+        </div>
+
+        <!-- Timer Controls -->
+        <div class="grid grid-cols-3 gap-2">
+          <button id="timerStartBtn" type="button" class="py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition active:scale-95">
+            Старт
+          </button>
+          <button id="timerResetBtn" type="button" class="py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-gray-200 text-xs font-semibold transition active:scale-95">
+            Сброс
+          </button>
+          <button id="timerApplyBtn" type="button" class="py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-red-300 text-xs font-semibold transition active:scale-95">
+            В результат
+          </button>
+        </div>
+      </div>
+
+      <!-- Workout Log Form -->
+      <div class="glass-card rounded-2xl p-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-bold text-white">Запись комплекса</h2>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/25">WOD + Итог</span>
+        </div>
+
+        <form id="workoutForm" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="wDate" class="block text-xs text-gray-400 mb-1.5">Дата</label>
+              <input id="wDate" type="date" required class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+            </div>
+            <div>
+              <label for="wFormat" class="block text-xs text-gray-400 mb-1.5">Формат комплекса</label>
+              <select id="wFormat" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm">
+                <option value="E2:30OM (каждые 2:30)">E2:30OM (каждые 2:30)</option>
+                <option value="AMRAP 15 мин">AMRAP 15 мин</option>
+                <option value="For Time">For Time</option>
+                <option value="EMOM">EMOM</option>
+                <option value="Силовая + WOD">Силовая + WOD</option>
+                <option value="Другое">Другое</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label for="wTitle" class="block text-xs text-gray-400 mb-1.5">Название / задание комплекса</label>
+            <textarea id="wTitle" rows="3" required placeholder="Например: Каждые 2:30 x 6 раундов: 10 махов гирей 16 кг, 10 швунгов гантелей 12.5 кг, 12 кал гребля" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm leading-relaxed"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="wResult" class="block text-xs text-gray-400 mb-1.5">Результат (время / раунды)</label>
+              <input id="wResult" type="text" required placeholder="6 раундов / 14:25" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm font-semibold" />
+            </div>
+            <div>
+              <label for="wDuration" class="block text-xs text-gray-400 mb-1.5">Длительность (мин)</label>
+              <input id="wDuration" type="number" min="1" max="240" placeholder="60" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+            </div>
+          </div>
+
+          <!-- Dynamic Exercises -->
+          <div class="space-y-2 pt-1">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium text-gray-300">Рабочие веса и упражнения</span>
+              <button type="button" id="addExerciseBtn" class="text-xs font-semibold text-red-400 hover:text-red-300 py-1 px-2 rounded-lg bg-red-500/10">
+                + Добавить
+              </button>
+            </div>
+            <div id="exerciseList" class="space-y-2"></div>
+          </div>
+
+          <!-- Post-Workout Feedback -->
+          <div class="border-t border-white/10 pt-4 space-y-3">
+            <h3 class="text-sm font-bold text-white">Обратная связь после тренировки</h3>
+
+            <div>
+              <div class="flex justify-between text-xs text-gray-400 mb-1">
+                <label for="wRpe">Тяжесть нагрузки (RPE)</label>
+                <span class="text-red-400 font-semibold" id="wRpeVal">8/10</span>
+              </div>
+              <input id="wRpe" type="range" min="1" max="10" value="8" class="w-full h-8 cursor-pointer" />
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs text-gray-400 mb-1">
+                <label for="wFeeling">Самочувствие после (10 = отлично)</label>
+                <span class="text-red-400 font-semibold" id="wFeelingVal">8/10</span>
+              </div>
+              <input id="wFeeling" type="range" min="1" max="10" value="8" class="w-full h-8 cursor-pointer" />
+            </div>
+
+            <div>
+              <label for="wFeedback" class="block text-xs text-gray-400 mb-1.5">Заметка / обратная связь</label>
+              <textarea id="wFeedback" rows="2" placeholder="Например: уложился в 1:40 из 2:30, запас 50 сек, техника стабильная" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm"></textarea>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+            <button type="submit" class="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition active:scale-[0.98]">
+              Сохранить тренировку
+            </button>
+            <button type="button" id="saveAndCopyBtn" class="w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-semibold text-sm transition active:scale-[0.98]">
+              Сохранить и скопировать отчёт
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- VIEW 3: FOOD / NUTRITION TRACKER -->
+    <section id="view-food" class="hidden space-y-4">
+      <!-- Daily Macros Progress -->
+      <div class="glass-card rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="text-base font-bold text-white">Питание за день</h2>
+            <p class="text-[11px] text-gray-400" id="foodDateLabel">Сегодня</p>
+          </div>
+          <input id="fDate" type="date" class="input-dark rounded-xl px-2.5 py-1.5 text-xs" />
+        </div>
+
+        <div class="grid grid-cols-4 gap-2 text-center pt-1">
+          <div class="rounded-xl bg-[#0a0b10] border border-white/10 p-2">
+            <div class="text-[10px] text-gray-400">Ккал</div>
+            <div class="text-sm font-bold text-white mt-0.5" id="macroKcal">0</div>
+            <div class="text-[9px] text-red-400" id="goalKcalLabel">/ 2000</div>
+          </div>
+          <div class="rounded-xl bg-[#0a0b10] border border-white/10 p-2">
+            <div class="text-[10px] text-gray-400">Белки</div>
+            <div class="text-sm font-bold text-white mt-0.5" id="macroProtein">0г</div>
+            <div class="text-[9px] text-gray-400">/ 130г</div>
+          </div>
+          <div class="rounded-xl bg-[#0a0b10] border border-white/10 p-2">
+            <div class="text-[10px] text-gray-400">Жиры</div>
+            <div class="text-sm font-bold text-white mt-0.5" id="macroFat">0г</div>
+            <div class="text-[9px] text-gray-400">/ 70г</div>
+          </div>
+          <div class="rounded-xl bg-[#0a0b10] border border-white/10 p-2">
+            <div class="text-[10px] text-gray-400">Углеводы</div>
+            <div class="text-sm font-bold text-white mt-0.5" id="macroCarbs">0г</div>
+            <div class="text-[9px] text-gray-400">/ 210г</div>
+          </div>
+        </div>
+
+        <div class="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+          <div id="kcalProgressBar" class="h-full bg-red-600 transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Smart Text Recognition Form -->
+      <div class="glass-card rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-white">Умный ввод еды</h3>
+          <span class="text-[11px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-400">Авто-КБЖУ</span>
+        </div>
+        <p class="text-[11px] text-gray-400 leading-relaxed">
+          Напишите через запятую продукты и вес, например: <span class="text-gray-200">курица 200г, рис 150г, огурец 100г</span> — приложение само посчитает КБЖУ.
+        </p>
+
+        <div class="space-y-2">
+          <textarea id="foodSmartInput" rows="2" placeholder="куриная грудка 200г, гречка 150г, яйцо 2 шт" class="input-dark w-full rounded-xl px-3 py-2.5 text-sm"></textarea>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="parseFoodBtn" type="button" class="py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition active:scale-95">
+              Распознать и добавить
+            </button>
+            <button id="toggleManualFoodBtn" type="button" class="py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-gray-200 text-xs font-semibold transition">
+              Ввести вручную
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Presets -->
+        <div class="space-y-1.5 pt-1">
+          <div class="text-[11px] text-gray-400 font-medium">Быстрые пресеты (1 тап):</div>
+          <div class="flex flex-wrap gap-1.5" id="foodPresetsContainer"></div>
+        </div>
+
+        <!-- Manual Override Form (hidden by default) -->
+        <form id="manualFoodForm" class="hidden border-t border-white/10 pt-3 space-y-2.5">
+          <input id="mfName" type="text" placeholder="Название блюда" required class="input-dark w-full rounded-xl px-3 py-2 text-xs" />
+          <div class="grid grid-cols-4 gap-2">
+            <input id="mfKcal" type="number" placeholder="Ккал" required class="input-dark rounded-xl px-2.5 py-2 text-xs" />
+            <input id="mfProtein" type="number" step="0.1" placeholder="Б (г)" required class="input-dark rounded-xl px-2.5 py-2 text-xs" />
+            <input id="mfFat" type="number" step="0.1" placeholder="Ж (г)" required class="input-dark rounded-xl px-2.5 py-2 text-xs" />
+            <input id="mfCarbs" type="number" step="0.1" placeholder="У (г)" required class="input-dark rounded-xl px-2.5 py-2 text-xs" />
+          </div>
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-white/15 hover:bg-white/20 text-white text-xs font-bold">
+            Добавить блюдо вручную
+          </button>
+        </form>
+      </div>
+
+      <!-- Today's Food List -->
+      <div class="glass-card rounded-2xl p-4 space-y-2.5">
+        <h3 class="text-sm font-bold text-white">Съедено за выбранную дату</h3>
+        <div id="foodDayList" class="space-y-2"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: HISTORY, CHART & BACKUP -->
+    <section id="view-history" class="hidden space-y-4">
+      <div class="glass-card rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-white">Динамика веса (кг)</h2>
+          <span class="text-[11px] text-gray-400" id="chartPointsLabel">Последние записи</span>
+        </div>
+        <div class="relative h-56 w-full">
+          <canvas id="weightChart"></canvas>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <h2 class="text-sm font-bold text-white">История по датам</h2>
+          <div class="flex gap-1.5 text-xs flex-wrap">
+            <button type="button" data-filter="all" class="filter-btn px-2.5 py-1.5 rounded-lg bg-red-600 text-white font-semibold">Все</button>
+            <button type="button" data-filter="workout" class="filter-btn px-2.5 py-1.5 rounded-lg bg-white/5 text-gray-300">Тренировки</button>
+            <button type="button" data-filter="morning" class="filter-btn px-2.5 py-1.5 rounded-lg bg-white/5 text-gray-300">Утро</button>
+            <button type="button" data-filter="food" class="filter-btn px-2.5 py-1.5 rounded-lg bg-white/5 text-gray-300">Еда</button>
+          </div>
+        </div>
+        <div id="historyFeed" class="space-y-2.5"></div>
+      </div>
+
+      <div class="glass-card rounded-2xl p-4 space-y-3">
+        <h2 class="text-sm font-bold text-white">Резервная копия на iPhone</h2>
+        <p class="text-xs text-gray-400 leading-relaxed">
+          История тренировок, веса и питания хранится на вашем iPhone. Раз в неделю сохраняйте JSON-бэкап в «Файлы», чтобы данные не пропали при очистке кэша Safari.
+        </p>
+        <div class="grid grid-cols-2 gap-2.5">
+          <button type="button" id="exportJsonBtn" class="py-2.5 px-3 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/35 text-red-300 text-xs font-semibold transition">
+            Скачать JSON-бэкап
+          </button>
+          <label class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold text-center cursor-pointer transition">
+            Восстановить из JSON
+            <input type="file" id="importJsonInput" accept=".json,application/json" class="hidden" />
+          </label>
+        </div>
+        <div class="flex items-center justify-between pt-1">
+          <button type="button" id="clearDemoBtn" class="text-xs text-red-400 hover:text-red-300 underline underline-offset-2">
+            Очистить все записи
+          </button>
+          <button type="button" id="loadDemoBtn" class="text-xs text-gray-400 hover:text-gray-200 underline underline-offset-2">
+            Загрузить пример
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Tab Navigation (4 Tabs) -->
+  <nav class="tab-bar fixed bottom-0 left-0 right-0 z-40">
+    <div class="max-w-xl mx-auto grid grid-cols-4 h-16">
+      <button type="button" data-tab="morning" class="nav-tab flex flex-col items-center justify-center gap-1 text-red-500">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <span class="text-[11px] font-semibold">Утро</span>
+      </button>
+      <button type="button" data-tab="workout" class="nav-tab flex flex-col items-center justify-center gap-1 text-gray-400">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <span class="text-[11px] font-semibold">Тренировка</span>
+      </button>
+      <button type="button" data-tab="food" class="nav-tab flex flex-col items-center justify-center gap-1 text-gray-400">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M5 6v14a2 2 0 002 2h10a2 2 0 002-2V6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        <span class="text-[11px] font-semibold">Еда</span>
+      </button>
+      <button type="button" data-tab="history" class="nav-tab flex flex-col items-center justify-center gap-1 text-gray-400">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <span class="text-[11px] font-semibold">История</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Toast Notification -->
+  <div id="toastContainer" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-[90%] max-w-md flex flex-col items-center gap-2"></div>
+
+  <script>
+    // --- PWA Manifest Registration ---
+    (function registerManifest() {
+      try {
+        const manifest = {
+          name: "WOD Tracker — Кроссфит и питание",
+          short_name: "WOD Tracker",
+          start_url: ".",
+          display: "standalone",
+          background_color: "#08090c",
+          theme_color: "#08090c",
+          icons: [{
+            src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%2308090c'/%3E%3Cpath d='M110 256h56l36-96 52 192 44-128 36 32h108' fill='none' stroke='%23ef4444' stroke-width='28' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
+            sizes: "512x512",
+            type: "image/svg+xml"
+          }]
+        };
+        const blob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
+        const link = document.createElement("link");
+        link.rel = "manifest";
+        link.href = URL.createObjectURL(blob);
+        document.head.appendChild(link);
+      } catch (e) {}
+    })();
+
+    // --- State & Storage ---
+    const STORAGE_KEY = "cf_wod_tracker_v2";
+    const LEGACY_KEY = "cf_wod_tracker_v1";
+    let state = { mornings: [], workouts: [], foods: [] };
+    let currentTab = "morning";
+    let historyFilter = "all";
+    let weightChartInstance = null;
+    let pendingDeleteId = null;
+    let pendingClearAll = false;
+
+    function todayISO() {
+      const d = new Date();
+      const offset = d.getTimezoneOffset();
+      return new Date(d.getTime() - offset * 60000).toISOString().split("T")[0];
+    }
+
+    function dateOffsetISO(daysAgo) {
+      const d = new Date();
+      d.setDate(d.getDate() - daysAgo);
+      const offset = d.getTimezoneOffset();
+      return new Date(d.getTime() - offset * 60000).toISOString().split("T")[0];
+    }
+
+    function getDemoData() {
+      return {
+        mornings: [
+          { id: "m_demo_1", date: dateOffsetISO(4), weight: 86.2, sleepHours: 6.0, sleepQuality: 6, energy: 6, recovery: 7, note: "Лёгкая усталость" },
+          { id: "m_demo_2", date: dateOffsetISO(2), weight: 85.8, sleepHours: 6.5, sleepQuality: 7, energy: 7, recovery: 8, note: "Бодрое утро" },
+          { id: "m_demo_3", date: todayISO(), weight: 85.4, sleepHours: 7.0, sleepQuality: 8, energy: 8, recovery: 8, note: "Готов к комплексу" }
+        ],
+        workouts: [
+          {
+            id: "w_demo_1",
+            date: dateOffsetISO(2),
+            format: "E2:30OM (каждые 2:30)",
+            title: "Каждые 2:30 x 6 раундов: 10 махов гирей 16 кг, 10 швунгов гантелей 12.5 кг, 12 кал гребля",
+            result: "6 раундов (средн. 1:42)",
+            duration: 55,
+            exercises: [
+              { name: "Махи гирей", weight: "16 кг", reps: "10" },
+              { name: "Швунги гантелей", weight: "12.5 кг", reps: "10" }
+            ],
+            rpe: 8,
+            feeling: 8,
+            feedback: "Ровный темп, на каждом интервале оставалось 45–50 сек отдыха."
+          }
+        ],
+        foods: [
+          { id: "f_demo_1", date: todayISO(), name: "Яичница 3 шт + тост", kcal: 380, protein: 24, fat: 21, carbs: 22 },
+          { id: "f_demo_2", date: todayISO(), name: "Куриная грудка 200г + гречка 150г", kcal: 415, protein: 50, fat: 6, carbs: 36 }
+        ]
+      };
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.mornings) && Array.isArray(parsed.workouts)) {
+            state = {
+              mornings: parsed.mornings,
+              workouts: parsed.workouts,
+              foods: Array.isArray(parsed.foods) ? parsed.foods : []
+            };
+            return;
+          }
+        }
+      } catch (e) {}
+      state = getDemoData();
+      saveState();
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        showToast("Не удалось сохранить в память браузера", "error");
+      }
+    }
+
+    // --- UI Helpers ---
+    function showToast(message, type = "success") {
+      const container = document.getElementById("toastContainer");
+      const el = document.createElement("div");
+      const color = type === "error" ? "bg-red-700 text-white" : "bg-red-600 text-white";
+      el.className = `toast-enter px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg ${color}`;
+      el.textContent = message;
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 2600);
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function copyTextToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast("Отчёт скопирован для ветки!");
+        }).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand("copy");
+        showToast("Отчёт скопирован для ветки!");
+      } catch (e) {
+        showToast("Не удалось скопировать", "error");
+      }
+      document.body.removeChild(ta);
+    }
+
+    // --- Navigation ---
+    function switchTab(tab) {
+      currentTab = tab;
+      ["morning", "workout", "food", "history"].forEach((t) => {
+        document.getElementById(`view-${t}`).classList.toggle("hidden", t !== tab);
+      });
+      document.querySelectorAll(".nav-tab").forEach((btn) => {
+        const active = btn.dataset.tab === tab;
+        btn.classList.toggle("text-red-500", active);
+        btn.classList.toggle("text-gray-400", !active);
+      });
+      if (tab === "food") renderFoodDay();
+      if (tab === "history") {
+        renderHistory();
+        renderChart();
+      }
+    }
+
+    document.querySelectorAll(".nav-tab").forEach((btn) => {
+      btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+    });
+
+    // --- Range Sliders ---
+    [
+      ["mSleepQuality", "mSleepQualityVal"],
+      ["mEnergy", "mEnergyVal"],
+      ["mRecovery", "mRecoveryVal"],
+      ["wRpe", "wRpeVal"],
+      ["wFeeling", "wFeelingVal"]
+    ].forEach(([inputId, labelId]) => {
+      const input = document.getElementById(inputId);
+      const label = document.getElementById(labelId);
+      input.addEventListener("input", () => { label.textContent = `${input.value}/10`; });
+    });
+
+    // --- WOD Timer (E2:30OM / AMRAP 15:00 / For Time) ---
+    let timerMode = "e230";
+    let timerRunning = false;
+    let timerHandle = null;
+    let timerMuted = false;
+    let audioCtx = null;
+    let roundCount = 0;
+    let elapsedSec = 0;
+    let currentRoundIdx = 1;
+    let roundRemainingSec = 150;
+    let amrapRemainingSec = 900;
+
+    function beep(freq = 880, dur = 0.14) {
+      if (timerMuted) return;
+      try {
+        if (!audioCtx) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          audioCtx = new Ctx();
+        }
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + dur);
+      } catch (e) {}
+    }
+
+    function fmtMMSS(sec) {
+      const s = Math.max(0, Math.floor(sec));
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
+    }
+
+    function resetTimer() {
+      if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
+      timerRunning = false;
+      document.getElementById("timerStartBtn").textContent = "Старт";
+      elapsedSec = 0;
+      currentRoundIdx = 1;
+      const intervalSec = Math.max(10, parseInt(document.getElementById("timerIntervalSec").value || "150", 10));
+      const totalRounds = Math.max(1, parseInt(document.getElementById("timerTotalRounds").value || "6", 10));
+      const amrapMin = Math.max(1, parseInt(document.getElementById("timerAmrapMin").value || "15", 10));
+      roundRemainingSec = intervalSec;
+      amrapRemainingSec = amrapMin * 60;
+      updateTimerUI(totalRounds, intervalSec, amrapMin);
+    }
+
+    function updateTimerUI(totalRounds, intervalSec, amrapMin) {
+      const disp = document.getElementById("timerDisplay");
+      const status = document.getElementById("timerStatusLabel");
+      if (timerMode === "e230") {
+        disp.textContent = fmtMMSS(roundRemainingSec);
+        status.textContent = timerRunning
+          ? `Раунд ${currentRoundIdx} из ${totalRounds}`
+          : `Готов • Интервал ${fmtMMSS(intervalSec)} × ${totalRounds}`;
+      } else if (timerMode === "amrap") {
+        disp.textContent = fmtMMSS(amrapRemainingSec);
+        status.textContent = timerRunning ? `AMRAP • Идёт работа` : `Готов • AMRAP ${amrapMin}:00`;
+      } else {
+        disp.textContent = fmtMMSS(elapsedSec);
+        status.textContent = timerRunning ? "Секундомер • В работе" : "Готов • For Time";
+      }
+    }
+
+    document.querySelectorAll(".tmode-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        timerMode = btn.dataset.tmode;
+        document.querySelectorAll(".tmode-btn").forEach((b) => {
+          const active = b.dataset.tmode === timerMode;
+          b.className = active
+            ? "tmode-btn py-2 rounded-xl bg-red-600 text-white font-bold"
+            : "tmode-btn py-2 rounded-xl bg-white/5 text-gray-300 font-semibold";
+        });
+        document.getElementById("timerIntervalWrap").classList.toggle("hidden", timerMode !== "e230");
+        document.getElementById("timerRoundsWrap").classList.toggle("hidden", timerMode !== "e230");
+        document.getElementById("timerAmrapWrap").classList.toggle("hidden", timerMode !== "amrap");
+        document.getElementById("timerConfigRow").classList.toggle("hidden", timerMode === "fortime");
+        resetTimer();
+      });
+    });
+
+    ["timerIntervalSec", "timerTotalRounds", "timerAmrapMin"].forEach((id) => {
+      document.getElementById(id).addEventListener("change", () => { if (!timerRunning) resetTimer(); });
+    });
+
+    document.getElementById("timerMuteBtn").addEventListener("click", () => {
+      timerMuted = !timerMuted;
+      document.getElementById("timerMuteBtn").textContent = timerMuted ? "Звук: ВЫКЛ" : "Звук: ВКЛ";
+    });
+
+    document.getElementById("roundPlusBtn").addEventListener("click", () => {
+      roundCount += 1;
+      document.getElementById("roundCounterVal").textContent = String(roundCount);
+    });
+
+    document.getElementById("timerResetBtn").addEventListener("click", () => {
+      roundCount = 0;
+      document.getElementById("roundCounterVal").textContent = "0";
+      resetTimer();
+    });
+
+    document.getElementById("timerStartBtn").addEventListener("click", () => {
+      if (timerRunning) {
+        clearInterval(timerHandle);
+        timerHandle = null;
+        timerRunning = false;
+        document.getElementById("timerStartBtn").textContent = "Продолжить";
+        return;
+      }
+      beep(980, 0.18);
+      timerRunning = true;
+      document.getElementById("timerStartBtn").textContent = "Пауза";
+
+      const intervalSec = Math.max(10, parseInt(document.getElementById("timerIntervalSec").value || "150", 10));
+      const totalRounds = Math.max(1, parseInt(document.getElementById("timerTotalRounds").value || "6", 10));
+      const amrapMin = Math.max(1, parseInt(document.getElementById("timerAmrapMin").value || "15", 10));
+
+      if (timerHandle) clearInterval(timerHandle);
+      timerHandle = setInterval(() => {
+        elapsedSec += 1;
+        if (timerMode === "e230") {
+          roundRemainingSec -= 1;
+          if (roundRemainingSec > 0 && roundRemainingSec <= 3) beep(660, 0.08);
+          if (roundRemainingSec <= 0) {
+            if (currentRoundIdx < totalRounds) {
+              currentRoundIdx += 1;
+              roundRemainingSec = intervalSec;
+              roundCount = currentRoundIdx - 1;
+              document.getElementById("roundCounterVal").textContent = String(roundCount);
+              beep(1040, 0.22);
+            } else {
+              clearInterval(timerHandle);
+              timerHandle = null;
+              timerRunning = false;
+              roundCount = totalRounds;
+              document.getElementById("roundCounterVal").textContent = String(roundCount);
+              document.getElementById("timerStartBtn").textContent = "Готово";
+              beep(1200, 0.35);
+              showToast("Интервалы завершены!");
+            }
+          }
+        } else if (timerMode === "amrap") {
+          amrapRemainingSec -= 1;
+          if (amrapRemainingSec > 0 && amrapRemainingSec <= 3) beep(660, 0.08);
+          if (amrapRemainingSec <= 0) {
+            clearInterval(timerHandle);
+            timerHandle = null;
+            timerRunning = false;
+            document.getElementById("timerStartBtn").textContent = "Готово";
+            beep(1200, 0.35);
+            showToast("Время AMRAP вышло!");
+          }
+        }
+        updateTimerUI(totalRounds, intervalSec, amrapMin);
+      }, 1000);
+    });
+
+    document.getElementById("timerApplyBtn").addEventListener("click", () => {
+      const resInput = document.getElementById("wResult");
+      const durInput = document.getElementById("wDuration");
+      if (timerMode === "e230") {
+        resInput.value = `${roundCount || currentRoundIdx} раунд(ов) (по 2:30)`;
+      } else if (timerMode === "amrap") {
+        resInput.value = `${roundCount} раундов`;
+      } else {
+        resInput.value = fmtMMSS(elapsedSec);
+      }
+      if (elapsedSec > 0) {
+        durInput.value = String(Math.max(1, Math.round(elapsedSec / 60)));
+      }
+      showToast("Результат подставлен в форму!");
+    });
+
+    // --- Dynamic Exercises ---
+    function addExerciseRow(name = "", weight = "", reps = "") {
+      const list = document.getElementById("exerciseList");
+      const row = document.createElement("div");
+      row.className = "exercise-row grid grid-cols-12 gap-2 items-center";
+      row.innerHTML = `
+        <input type="text" placeholder="Упражнение" value="${escapeHtml(name)}" class="ex-name input-dark col-span-5 rounded-xl px-2.5 py-2 text-xs" />
+        <input type="text" placeholder="Вес" value="${escapeHtml(weight)}" class="ex-weight input-dark col-span-3 rounded-xl px-2.5 py-2 text-xs" />
+        <input type="text" placeholder="Повт" value="${escapeHtml(reps)}" class="ex-reps input-dark col-span-3 rounded-xl px-2.5 py-2 text-xs" />
+        <button type="button" class="remove-ex col-span-1 h-8 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-300 text-xs font-bold">×</button>
+      `;
+      row.querySelector(".remove-ex").addEventListener("click", () => row.remove());
+      list.appendChild(row);
+    }
+    document.getElementById("addExerciseBtn").addEventListener("click", () => addExerciseRow());
+
+    // --- Morning Form Submit ---
+    document.getElementById("morningForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const entry = {
+        id: "m_" + Date.now(),
+        date: document.getElementById("mDate").value || todayISO(),
+        weight: parseFloat(document.getElementById("mWeight").value),
+        sleepHours: parseFloat(document.getElementById("mSleepHours").value),
+        sleepQuality: parseInt(document.getElementById("mSleepQuality").value, 10),
+        energy: parseInt(document.getElementById("mEnergy").value, 10),
+        recovery: parseInt(document.getElementById("mRecovery").value, 10),
+        note: document.getElementById("mNote").value.trim()
+      };
+      state.mornings.push(entry);
+      state.mornings.sort((a, b) => a.date.localeCompare(b.date));
+      saveState();
+      renderStats();
+      document.getElementById("mNote").value = "";
+      showToast("Утренний чек-ин сохранён!");
+    });
+
+    // --- Workout Save ---
+    function collectWorkoutFromForm() {
+      const exercises = [];
+      document.querySelectorAll("#exerciseList .exercise-row").forEach((row) => {
+        const name = row.querySelector(".ex-name").value.trim();
+        const weight = row.querySelector(".ex-weight").value.trim();
+        const reps = row.querySelector(".ex-reps").value.trim();
+        if (name || weight || reps) exercises.push({ name: name || "Упражнение", weight, reps });
+      });
+      return {
+        id: "w_" + Date.now(),
+        date: document.getElementById("wDate").value || todayISO(),
+        format: document.getElementById("wFormat").value,
+        title: document.getElementById("wTitle").value.trim(),
+        result: document.getElementById("wResult").value.trim(),
+        duration: document.getElementById("wDuration").value ? parseInt(document.getElementById("wDuration").value, 10) : null,
+        exercises,
+        rpe: parseInt(document.getElementById("wRpe").value, 10),
+        feeling: parseInt(document.getElementById("wFeeling").value, 10),
+        feedback: document.getElementById("wFeedback").value.trim()
+      };
+    }
+
+    function saveWorkoutEntry() {
+      const form = document.getElementById("workoutForm");
+      if (!form.reportValidity()) return null;
+      const entry = collectWorkoutFromForm();
+      state.workouts.push(entry);
+      state.workouts.sort((a, b) => b.date.localeCompare(a.date));
+      saveState();
+      renderStats();
+      return entry;
+    }
+
+    document.getElementById("workoutForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (saveWorkoutEntry()) showToast("Тренировка сохранена!");
+    });
+
+    document.getElementById("saveAndCopyBtn").addEventListener("click", () => {
+      const saved = saveWorkoutEntry();
+      if (saved) copyTextToClipboard(formatReport(saved));
+    });
+
+    // --- Smart Food Recognition Dictionary (per 100g or per 1 unit) ---
+    const FOOD_DB = [
+      { keys: ["куриная грудка", "курица", "филе куриное", "грудка"], unit: "г", per100: { kcal: 113, p: 23.6, f: 1.9, c: 0.4 } },
+      { keys: ["индейка", "филе индейки"], unit: "г", per100: { kcal: 115, p: 24, f: 1.5, c: 0 } },
+      { keys: ["говядина", "стейк"], unit: "г", per100: { kcal: 187, p: 26, f: 9, c: 0 } },
+      { keys: ["лосось", "семга", "форель", "рыба"], unit: "г", per100: { kcal: 208, p: 20, f: 13, c: 0 } },
+      { keys: ["тунец"], unit: "г", per100: { kcal: 116, p: 25, f: 1, c: 0 } },
+      { keys: ["яйцо", "яйца", "яичница"], unit: "шт", perUnit: { kcal: 78, p: 6.5, f: 5.5, c: 0.6 }, per100: { kcal: 155, p: 13, f: 11, c: 1.1 } },
+      { keys: ["творог"], unit: "г", per100: { kcal: 121, p: 17, f: 5, c: 1.8 } },
+      { keys: ["протеин", "сывороточный", "whey"], unit: "г", per100: { kcal: 380, p: 78, f: 5, c: 6 } },
+      { keys: ["гречка"], unit: "г", per100: { kcal: 110, p: 4.2, f: 1.1, c: 21 } },
+      { keys: ["рис"], unit: "г", per100: { kcal: 130, p: 2.7, f: 0.3, c: 28 } },
+      { keys: ["овсянка", "геркулес"], unit: "г", per100: { kcal: 88, p: 3, f: 1.7, c: 15 } },
+      { keys: ["макароны", "паста"], unit: "г", per100: { kcal: 131, p: 5, f: 1.1, c: 25 } },
+      { keys: ["картофель", "картошка"], unit: "г", per100: { kcal: 82, p: 2, f: 0.4, c: 17 } },
+      { keys: ["банан"], unit: "шт", perUnit: { kcal: 105, p: 1.3, f: 0.4, c: 27 }, per100: { kcal: 89, p: 1.1, f: 0.3, c: 23 } },
+      { keys: ["яблоко"], unit: "шт", perUnit: { kcal: 80, p: 0.4, f: 0.3, c: 21 }, per100: { kcal: 52, p: 0.3, f: 0.2, c: 14 } },
+      { keys: ["огурец", "огурцы", "помидор", "помидоры", "салат", "овощи", "кабачок"], unit: "г", per100: { kcal: 22, p: 1.1, f: 0.2, c: 4 } },
+      { keys: ["хлеб", "тост"], unit: "шт", perUnit: { kcal: 75, p: 2.5, f: 1, c: 14 }, per100: { kcal: 250, p: 8.5, f: 3, c: 47 } },
+      { keys: ["сыр"], unit: "г", per100: { kcal: 350, p: 25, f: 27, c: 0 } },
+      { keys: ["молоко"], unit: "г", per100: { kcal: 52, p: 3, f: 2.5, c: 4.7 } },
+      { keys: ["масло"], unit: "г", per100: { kcal: 880, p: 0, f: 99, c: 0 } },
+      { keys: ["орехи", "миндаль", "грецкий"], unit: "г", per100: { kcal: 610, p: 18, f: 54, c: 13 } },
+      { keys: ["кофе", "американо", "латте", "капучино"], unit: "шт", perUnit: { kcal: 60, p: 2.5, f: 2, c: 7 }, per100: { kcal: 30, p: 1.2, f: 1, c: 3.5 } }
+    ];
+
+    const FOOD_PRESETS = [
+      { name: "Протеин 30г", kcal: 114, protein: 23, fat: 1.5, carbs: 2 },
+      { name: "Курица 200г + рис 150г", kcal: 421, protein: 51, fat: 4.3, carbs: 43 },
+      { name: "3 яйца + тост", kcal: 309, protein: 22, fat: 17.5, carbs: 16 },
+      { name: "Творог 200г + банан", kcal: 347, protein: 35, fat: 10.4, carbs: 30 },
+      { name: "Кофе с молоком", kcal: 60, protein: 2.5, fat: 2, carbs: 7 }
+    ];
+
+    function parseSmartFood(text) {
+      const parts = text.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
+      let totalKcal = 0, totalP = 0, totalF = 0, totalC = 0;
+      let matchedAny = false;
+
+      parts.forEach((part) => {
+        const lower = part.toLowerCase();
+        const found = FOOD_DB.find((item) => item.keys.some((k) => lower.includes(k)));
+        if (!found) return;
+        matchedAny = true;
+
+        const gMatch = lower.match(/(\d+(?:[.,]\d+)?)\s*(г|гр|мл)/);
+        const shtMatch = lower.match(/(\d+(?:[.,]\d+)?)\s*(шт|куск|порц|лож)/);
+        const numOnly = lower.match(/(\d+(?:[.,]\d+)?)/);
+
+        if (gMatch) {
+          const grams = parseFloat(gMatch[1].replace(",", "."));
+          const factor = grams / 100;
+          totalKcal += found.per100.kcal * factor;
+          totalP += found.per100.p * factor;
+          totalF += found.per100.f * factor;
+          totalC += found.per100.c * factor;
+        } else if (shtMatch && found.perUnit) {
+          const cnt = parseFloat(shtMatch[1].replace(",", "."));
+          totalKcal += found.perUnit.kcal * cnt;
+          totalP += found.perUnit.p * cnt;
+          totalF += found.perUnit.f * cnt;
+          totalC += found.perUnit.c * cnt;
+        } else if (numOnly) {
+          const val = parseFloat(numOnly[1].replace(",", "."));
+          if (found.unit === "шт" && val <= 10 && found.perUnit) {
+            totalKcal += found.perUnit.kcal * val;
+            totalP += found.perUnit.p * val;
+            totalF += found.perUnit.f * val;
+            totalC += found.perUnit.c * val;
+          } else {
+            const factor = val / 100;
+            totalKcal += found.per100.kcal * factor;
+            totalP += found.per100.p * factor;
+            totalF += found.per100.f * factor;
+            totalC += found.per100.c * factor;
+          }
+        } else if (found.perUnit) {
+          totalKcal += found.perUnit.kcal;
+          totalP += found.perUnit.p;
+          totalF += found.perUnit.f;
+          totalC += found.perUnit.c;
+        } else {
+          // Default 150g portion
+          totalKcal += found.per100.kcal * 1.5;
+          totalP += found.per100.p * 1.5;
+          totalF += found.per100.f * 1.5;
+          totalC += found.per100.c * 1.5;
+        }
+      });
+
+      return {
+        matchedAny,
+        kcal: Math.round(totalKcal),
+        protein: Math.round(totalP * 10) / 10,
+        fat: Math.round(totalF * 10) / 10,
+        carbs: Math.round(totalC * 10) / 10
+      };
+    }
+
+    function addFoodItem(name, kcal, protein, fat, carbs) {
+      const date = document.getElementById("fDate").value || todayISO();
+      state.foods.push({
+        id: "f_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+        date,
+        name,
+        kcal: Math.round(kcal),
+        protein: Math.round(protein * 10) / 10,
+        fat: Math.round(fat * 10) / 10,
+        carbs: Math.round(carbs * 10) / 10
+      });
+      saveState();
+      renderStats();
+      renderFoodDay();
+    }
+
+    document.getElementById("parseFoodBtn").addEventListener("click", () => {
+      const raw = document.getElementById("foodSmartInput").value.trim();
+      if (!raw) {
+        showToast("Введите продукты для распознавания", "error");
+        return;
+      }
+      const res = parseSmartFood(raw);
+      if (!res.matchedAny) {
+        showToast("Не узнал продукты — нажмите «Ввести вручную»", "error");
+        document.getElementById("manualFoodForm").classList.remove("hidden");
+        document.getElementById("mfName").value = raw;
+        return;
+      }
+      addFoodItem(raw, res.kcal, res.protein, res.fat, res.carbs);
+      document.getElementById("foodSmartInput").value = "";
+      showToast(`Добавлено: ${res.kcal} ккал (Б ${res.protein}г)`);
+    });
+
+    document.getElementById("toggleManualFoodBtn").addEventListener("click", () => {
+      document.getElementById("manualFoodForm").classList.toggle("hidden");
+    });
+
+    document.getElementById("manualFoodForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      addFoodItem(
+        document.getElementById("mfName").value.trim(),
+        parseFloat(document.getElementById("mfKcal").value || "0"),
+        parseFloat(document.getElementById("mfProtein").value || "0"),
+        parseFloat(document.getElementById("mfFat").value || "0"),
+        parseFloat(document.getElementById("mfCarbs").value || "0")
+      );
+      e.target.reset();
+      showToast("Блюдо добавлено!");
+    });
+
+    document.getElementById("fDate").addEventListener("change", renderFoodDay);
+
+    function renderPresets() {
+      const wrap = document.getElementById("foodPresetsContainer");
+      wrap.innerHTML = "";
+      FOOD_PRESETS.forEach((p) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "text-[11px] px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-red-600/20 border border-white/10 text-gray-200 transition active:scale-95";
+        btn.textContent = `+ ${p.name}`;
+        btn.addEventListener("click", () => {
+          addFoodItem(p.name, p.kcal, p.protein, p.fat, p.carbs);
+          showToast(`Добавлено: ${p.name}`);
+        });
+        wrap.appendChild(btn);
+      });
+    }
+
+    function renderFoodDay() {
+      const targetDate = document.getElementById("fDate").value || todayISO();
+      document.getElementById("foodDateLabel").textContent = targetDate === todayISO() ? "Сегодня" : targetDate;
+      const list = state.foods.filter((f) => f.date === targetDate);
+
+      let k = 0, p = 0, f = 0, c = 0;
+      list.forEach((item) => {
+        k += Number(item.kcal || 0);
+        p += Number(item.protein || 0);
+        f += Number(item.fat || 0);
+        c += Number(item.carbs || 0);
+      });
+
+      document.getElementById("macroKcal").textContent = String(Math.round(k));
+      document.getElementById("macroProtein").textContent = `${Math.round(p)}г`;
+      document.getElementById("macroFat").textContent = `${Math.round(f)}г`;
+      document.getElementById("macroCarbs").textContent = `${Math.round(c)}г`;
+
+      const pct = Math.min(100, Math.round((k / 2000) * 100));
+      document.getElementById("kcalProgressBar").style.width = `${pct}%`;
+
+      const container = document.getElementById("foodDayList");
+      if (list.length === 0) {
+        container.innerHTML = `<div class="text-xs text-gray-500 text-center py-4">За эту дату приёмов пищи пока нет.</div>`;
+        return;
+      }
+      container.innerHTML = "";
+      list.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "rounded-xl bg-[#0a0b10] border border-white/10 p-2.5 flex items-center justify-between gap-2";
+        row.innerHTML = `
+          <div>
+            <div class="text-xs font-semibold text-white">${escapeHtml(item.name)}</div>
+            <div class="text-[11px] text-gray-400">${item.kcal} ккал • Б ${item.protein}г • Ж ${item.fat}г • У ${item.carbs}г</div>
+          </div>
+          <button type="button" class="del-food-btn text-xs text-red-400 font-semibold px-2 py-1">Удалить</button>
+        `;
+        row.querySelector(".del-food-btn").addEventListener("click", () => {
+          state.foods = state.foods.filter((x) => x.id !== item.id);
+          saveState();
+          renderStats();
+          renderFoodDay();
+          showToast("Приём пищи удалён");
+        });
+        container.appendChild(row);
+      });
+    }
+
+    // --- Report Formatter ---
+    function formatReport(workout) {
+      const targetDate = workout ? workout.date : todayISO();
+      const morning = [...state.mornings].reverse().find((m) => m.date === targetDate)
+        || state.mornings[state.mornings.length - 1];
+      const dayFoods = state.foods.filter((f) => f.date === targetDate);
+
+      const lines = [`ОТЧЁТ ПО ДНЮ И ТРЕНИРОВКЕ (${targetDate})`];
+      if (morning) {
+        lines.push(`Утро (${morning.date}): вес ${morning.weight} кг | сон ${morning.sleepHours} ч (${morning.sleepQuality}/10) | энергия ${morning.energy}/10 | восстановление ${morning.recovery}/10`);
+        if (morning.note) lines.push(`Утренняя заметка: ${morning.note}`);
+      }
+      if (workout) {
+        lines.push(`Комплекс (${workout.format}): ${workout.title}`);
+        lines.push(`Результат: ${workout.result}${workout.duration ? ` | время: ${workout.duration} мин` : ""}`);
+        if (workout.exercises && workout.exercises.length > 0) {
+          lines.push(`Веса: ${workout.exercises.map((ex) => `${ex.name}${ex.weight ? " " + ex.weight : ""}${ex.reps ? " x " + ex.reps : ""}`).join("; ")}`);
+        }
+        lines.push(`Обратная связь: RPE ${workout.rpe}/10 | самочувствие ${workout.feeling}/10`);
+        if (workout.feedback) lines.push(`Комментарий: ${workout.feedback}`);
+      }
+      if (dayFoods.length > 0) {
+        const k = Math.round(dayFoods.reduce((s, x) => s + Number(x.kcal || 0), 0));
+        const p = Math.round(dayFoods.reduce((s, x) => s + Number(x.protein || 0), 0));
+        const f = Math.round(dayFoods.reduce((s, x) => s + Number(x.fat || 0), 0));
+        const c = Math.round(dayFoods.reduce((s, x) => s + Number(x.carbs || 0), 0));
+        lines.push(`Питание за ${targetDate}: ${k} ккал (Б ${p}г / Ж ${f}г / У ${c}г)`);
+      }
+      return lines.join("\n");
+    }
+
+    document.getElementById("quickCopyBtn").addEventListener("click", () => {
+      copyTextToClipboard(formatReport(state.workouts[0] || null));
+    });
+
+    // --- Stats & Chart ---
+    function renderStats() {
+      const mornings = [...state.mornings].sort((a, b) => a.date.localeCompare(b.date));
+      const lastM = mornings[mornings.length - 1];
+      document.getElementById("statLastWeight").textContent = lastM ? `${lastM.weight.toFixed(1)} кг` : "—";
+      if (mornings.length > 0) {
+        const last7 = mornings.slice(-7);
+        const avg = last7.reduce((sum, m) => sum + Number(m.weight || 0), 0) / last7.length;
+        document.getElementById("statWeightAvg").textContent = `7д ср: ${avg.toFixed(1)} кг`;
+      } else {
+        document.getElementById("statWeightAvg").textContent = "7д ср: —";
+      }
+
+      document.getElementById("statWorkoutsCount").textContent = String(state.workouts.length);
+      document.getElementById("statLastWorkout").textContent = state.workouts[0] ? `Посл: ${state.workouts[0].date}` : "Нет записей";
+
+      const todayFoods = state.foods.filter((f) => f.date === todayISO());
+      const tk = Math.round(todayFoods.reduce((s, x) => s + Number(x.kcal || 0), 0));
+      const tp = Math.round(todayFoods.reduce((s, x) => s + Number(x.protein || 0), 0));
+      document.getElementById("statTodayKcal").textContent = String(tk);
+      document.getElementById("statTodayProtein").textContent = `Белок: ${tp} г`;
+    }
+
+    function renderChart() {
+      const canvas = document.getElementById("weightChart");
+      const mornings = [...state.mornings].sort((a, b) => a.date.localeCompare(b.date)).slice(-14);
+      document.getElementById("chartPointsLabel").textContent = mornings.length ? `Записей: ${mornings.length}` : "Нет данных";
+      if (weightChartInstance) weightChartInstance.destroy();
+
+      weightChartInstance = new Chart(canvas, {
+        type: "line",
+        data: {
+          labels: mornings.map((m) => m.date.slice(5)),
+          datasets: [{
+            label: "Вес (кг)",
+            data: mornings.map((m) => m.weight),
+            borderColor: "#ef4444",
+            backgroundColor: "rgba(239, 68, 68, 0.16)",
+            borderWidth: 2.5,
+            pointBackgroundColor: "#ef4444",
+            pointRadius: 4,
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#9ca3af", font: { size: 11 } } },
+            y: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#9ca3af", font: { size: 11 } } }
+          }
+        }
+      });
+    }
+
+    // --- History Feed ---
+    document.querySelectorAll(".filter-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        historyFilter = btn.dataset.filter;
+        document.querySelectorAll(".filter-btn").forEach((b) => {
+          const active = b.dataset.filter === historyFilter;
+          b.className = active
+            ? "filter-btn px-2.5 py-1.5 rounded-lg bg-red-600 text-white font-semibold"
+            : "filter-btn px-2.5 py-1.5 rounded-lg bg-white/5 text-gray-300";
+        });
+        renderHistory();
+      });
+    });
+
+    function renderHistory() {
+      const feed = document.getElementById("historyFeed");
+      const items = [];
+      if (historyFilter === "all" || historyFilter === "workout") {
+        state.workouts.forEach((w) => items.push({ type: "workout", date: w.date, data: w }));
+      }
+      if (historyFilter === "all" || historyFilter === "morning") {
+        state.mornings.forEach((m) => items.push({ type: "morning", date: m.date, data: m }));
+      }
+      if (historyFilter === "all" || historyFilter === "food") {
+        state.foods.forEach((f) => items.push({ type: "food", date: f.date, data: f }));
+      }
+      items.sort((a, b) => b.date.localeCompare(a.date));
+
+      if (items.length === 0) {
+        feed.innerHTML = `<div class="text-xs text-gray-500 text-center py-6">Пока нет записей в этом разделе.</div>`;
+        return;
+      }
+
+      feed.innerHTML = "";
+      items.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "rounded-xl bg-[#0a0b10] border border-white/10 p-3 space-y-2";
+
+        if (item.type === "workout") {
+          const w = item.data;
+          card.innerHTML = `
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-red-600/20 text-red-400">${escapeHtml(w.format)}</span>
+                <span class="text-xs font-semibold text-gray-300">${escapeHtml(w.date)}</span>
+              </div>
+              <span class="text-xs font-bold text-white">${escapeHtml(w.result)}</span>
+            </div>
+            <p class="text-xs text-gray-200 leading-relaxed">${escapeHtml(w.title)}</p>
+            <div class="flex items-center justify-between text-[11px] text-gray-400 pt-1 border-t border-white/5">
+              <span>RPE: <strong class="text-white">${w.rpe}/10</strong> • Самочувствие: <strong class="text-white">${w.feeling}/10</strong></span>
+              <div class="flex items-center gap-2">
+                <button type="button" class="copy-w-btn text-red-400 font-semibold">Копировать</button>
+                <button type="button" class="del-btn text-gray-400 hover:text-red-400 font-semibold">${pendingDeleteId === w.id ? "Точно?" : "Удалить"}</button>
+              </div>
+            </div>
+            ${w.feedback ? `<p class="text-[11px] text-gray-400 italic">«${escapeHtml(w.feedback)}»</p>` : ""}
+          `;
+          card.querySelector(".copy-w-btn").addEventListener("click", () => copyTextToClipboard(formatReport(w)));
+          card.querySelector(".del-btn").addEventListener("click", () => handleDelete("workout", w.id));
+        } else if (item.type === "morning") {
+          const m = item.data;
+          card.innerHTML = `
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/10 text-gray-200">Утро</span>
+                <span class="text-xs font-semibold text-gray-300">${escapeHtml(m.date)}</span>
+              </div>
+              <span class="text-xs font-bold text-red-400">${m.weight.toFixed(1)} кг</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-gray-400">
+              <span>Сон: ${m.sleepHours}ч (${m.sleepQuality}/10) • Энергия: ${m.energy}/10 • Восст: ${m.recovery}/10</span>
+              <button type="button" class="del-btn text-gray-400 hover:text-red-400 font-semibold">${pendingDeleteId === m.id ? "Точно?" : "Удалить"}</button>
+            </div>
+            ${m.note ? `<p class="text-[11px] text-gray-400 italic">«${escapeHtml(m.note)}»</p>` : ""}
+          `;
+          card.querySelector(".del-btn").addEventListener("click", () => handleDelete("morning", m.id));
+        } else {
+          const f = item.data;
+          card.innerHTML = `
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-red-950 text-red-300 border border-red-800/40">Еда</span>
+                <span class="text-xs font-semibold text-gray-300">${escapeHtml(f.date)}</span>
+              </div>
+              <span class="text-xs font-bold text-white">${f.kcal} ккал</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-gray-300">
+              <span>${escapeHtml(f.name)} (Б ${f.protein}г / Ж ${f.fat}г / У ${f.carbs}г)</span>
+              <button type="button" class="del-btn text-gray-400 hover:text-red-400 font-semibold">${pendingDeleteId === f.id ? "Точно?" : "Удалить"}</button>
+            </div>
+          `;
+          card.querySelector(".del-btn").addEventListener("click", () => handleDelete("food", f.id));
+        }
+        feed.appendChild(card);
+      });
+    }
+
+    function handleDelete(type, id) {
+      if (pendingDeleteId !== id) {
+        pendingDeleteId = id;
+        renderHistory();
+        setTimeout(() => { if (pendingDeleteId === id) { pendingDeleteId = null; renderHistory(); } }, 3000);
+        return;
+      }
+      pendingDeleteId = null;
+      if (type === "workout") state.workouts = state.workouts.filter((w) => w.id !== id);
+      else if (type === "morning") state.mornings = state.mornings.filter((m) => m.id !== id);
+      else state.foods = state.foods.filter((f) => f.id !== id);
+      saveState();
+      renderStats();
+      renderHistory();
+      renderChart();
+      showToast("Запись удалена");
+    }
+
+    // --- Backup ---
+    document.getElementById("exportJsonBtn").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `crossfit-tracker-backup-${todayISO()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Бэкап скачан!");
+    });
+
+    document.getElementById("importJsonInput").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          if (parsed && Array.isArray(parsed.mornings) && Array.isArray(parsed.workouts)) {
+            state = {
+              mornings: parsed.mornings,
+              workouts: parsed.workouts,
+              foods: Array.isArray(parsed.foods) ? parsed.foods : []
+            };
+            saveState();
+            renderStats();
+            renderHistory();
+            renderChart();
+            renderFoodDay();
+            showToast("История восстановлена!");
+          } else {
+            showToast("Неверный формат файла", "error");
+          }
+        } catch (err) {
+          showToast("Ошибка чтения JSON", "error");
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = "";
+    });
+
+    document.getElementById("clearDemoBtn").addEventListener("click", () => {
+      const btn = document.getElementById("clearDemoBtn");
+      if (!pendingClearAll) {
+        pendingClearAll = true;
+        btn.textContent = "Нажмите ещё раз для очистки";
+        setTimeout(() => { pendingClearAll = false; btn.textContent = "Очистить все записи"; }, 3000);
+        return;
+      }
+      pendingClearAll = false;
+      btn.textContent = "Очистить все записи";
+      state = { mornings: [], workouts: [], foods: [] };
+      saveState();
+      renderStats();
+      renderHistory();
+      renderChart();
+      renderFoodDay();
+      showToast("Все записи очищены");
+    });
+
+    document.getElementById("loadDemoBtn").addEventListener("click", () => {
+      state = getDemoData();
+      saveState();
+      renderStats();
+      renderHistory();
+      renderChart();
+      renderFoodDay();
+      showToast("Загружен пример данных");
+    });
+
+    // --- Init ---
+    document.getElementById("mDate").value = todayISO();
+    document.getElementById("wDate").value = todayISO();
+    document.getElementById("fDate").value = todayISO();
+    addExerciseRow("Махи гирей", "", "");
+    renderPresets();
+    loadState();
+    renderStats();
+    resetTimer();
+  </script>
+</body>
+</html>
