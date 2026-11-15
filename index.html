@@ -221,27 +221,32 @@
     <!-- VIEW 2: WORKOUT LOG + FULLSCREEN WOD TIMER + SMART WEIGHT HINTS -->
     <section id="view-workout" class="hidden space-y-4">
 
-      <!-- WOD Generator & Smart Import Card -->
-      <div class="ios-card rounded-3xl p-4 space-y-3">
-        <div class="flex items-center justify-between gap-2">
-          <div>
-            <h2 class="text-sm font-bold text-white">Быстрый старт WOD</h2>
-            <p class="text-[11px] text-zinc-400">Готовые комплексы, генератор или вставка из ветки</p>
+      <!-- Collapsible WOD Generator & Templates Bar -->
+      <div class="ios-card rounded-2xl px-4 py-3 space-y-3">
+        <button id="toggleQuickWodBtn" type="button" class="w-full flex items-center justify-between text-left">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-white">Выбрать или сгенерировать WOD</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold" id="quickWodCountBadge">Шаблоны</span>
           </div>
-          <button id="pasteWodBtn" type="button" class="px-3 py-1.5 rounded-full bg-red-500/15 hover:bg-red-500/25 border border-red-500/35 text-red-400 text-[11px] font-bold transition active:scale-95">
-            Вставить из буфера
-          </button>
-        </div>
+          <span id="quickWodArrow" class="text-xs text-zinc-400 font-bold">▾</span>
+        </button>
 
-        <div class="flex flex-wrap gap-1.5" id="wodTemplatesWrap"></div>
-
-        <div class="grid grid-cols-2 gap-2 pt-0.5">
-          <button id="genE230Btn" type="button" class="py-2 px-3 rounded-2xl bg-white/[0.06] hover:bg-white/10 border border-white/10 text-zinc-200 text-[11px] font-semibold transition active:scale-95">
-            🎲 Сгенерировать 2:30 × 6
-          </button>
-          <button id="genAmrapBtn" type="button" class="py-2 px-3 rounded-2xl bg-white/[0.06] hover:bg-white/10 border border-white/10 text-zinc-200 text-[11px] font-semibold transition active:scale-95">
-            🎲 Сгенерировать AMRAP 15
-          </button>
+        <div id="quickWodPanel" class="hidden space-y-3 pt-1 border-t border-white/[0.07]">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] text-zinc-400">Готовые, ваши и из ветки</span>
+            <button id="pasteWodBtn" type="button" class="px-3 py-1.5 rounded-full bg-red-500/15 hover:bg-red-500/25 border border-red-500/35 text-red-400 text-[11px] font-bold transition active:scale-95">
+              Вставить из буфера
+            </button>
+          </div>
+          <div class="flex flex-wrap gap-1.5" id="wodTemplatesWrap"></div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="genE230Btn" type="button" class="py-2 px-3 rounded-2xl bg-white/[0.06] hover:bg-white/10 border border-white/10 text-zinc-200 text-[11px] font-semibold transition active:scale-95">
+              🎲 Сгенерировать 2:30 × 6
+            </button>
+            <button id="genAmrapBtn" type="button" class="py-2 px-3 rounded-2xl bg-white/[0.06] hover:bg-white/10 border border-white/10 text-zinc-200 text-[11px] font-semibold transition active:scale-95">
+              🎲 Сгенерировать AMRAP 15
+            </button>
+          </div>
         </div>
       </div>
 
@@ -316,9 +321,14 @@
 
       <!-- Workout Log Form -->
       <div class="ios-card rounded-3xl p-5 space-y-4">
-        <div class="flex items-center justify-between">
-          <h2 class="text-base font-bold text-white">Запись комплекса</h2>
-          <span class="text-xs text-zinc-400 font-medium" id="workoutDateText">Сегодня</span>
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="text-base font-bold text-white">Запись комплекса</h2>
+            <span class="text-[11px] text-zinc-400 font-medium" id="workoutDateText">Сегодня</span>
+          </div>
+          <button id="saveTemplateBtn" type="button" class="px-3 py-1.5 rounded-full bg-white/[0.07] hover:bg-red-500/20 border border-white/10 text-zinc-200 hover:text-red-300 text-[11px] font-semibold transition active:scale-95">
+            ★ В мои шаблоны
+          </button>
         </div>
 
         <form id="workoutForm" class="space-y-4">
@@ -639,7 +649,7 @@
 
     const STORAGE_KEY = "cf_wod_tracker_v2";
     const LEGACY_KEY = "cf_wod_tracker_v1";
-    let state = { mornings: [], workouts: [], foods: [] };
+    let state = { mornings: [], workouts: [], foods: [], customTemplates: [] };
     let currentTab = "morning";
     let historyFilter = "all";
     let weightChartInstance = null;
@@ -711,7 +721,8 @@
             state = {
               mornings: parsed.mornings,
               workouts: parsed.workouts,
-              foods: Array.isArray(parsed.foods) ? parsed.foods : []
+              foods: Array.isArray(parsed.foods) ? parsed.foods : [],
+              customTemplates: Array.isArray(parsed.customTemplates) ? parsed.customTemplates : []
             };
             return;
           }
@@ -992,11 +1003,19 @@
 
     function recordSplit() {
       roundCount += 1;
-      const lap = elapsedSec - lastSplitElapsed;
-      lastSplitElapsed = elapsedSec;
-      splits.push(fmtMMSS(lap > 0 ? lap : elapsedSec));
+      if (timerMode === "e230") {
+        const intervalSec = Math.max(10, parseInt(document.getElementById("timerIntervalSec").value || "150", 10));
+        const workSec = Math.max(1, intervalSec - roundRemainingSec);
+        const restSec = Math.max(0, roundRemainingSec);
+        splits.push(`Работа ${fmtMMSS(workSec)} • Отдых ${fmtMMSS(restSec)}`);
+        document.getElementById("fsRoundText").textContent = `Раунд ${roundCount} • Отдых ${fmtMMSS(restSec)}`;
+      } else {
+        const lap = elapsedSec - lastSplitElapsed;
+        lastSplitElapsed = elapsedSec;
+        splits.push(fmtMMSS(lap > 0 ? lap : elapsedSec));
+        document.getElementById("fsRoundText").textContent = `Раунд ${roundCount}`;
+      }
       document.getElementById("roundCounterVal").textContent = String(roundCount);
-      document.getElementById("fsRoundText").textContent = `Раунд ${roundCount}`;
       renderSplits();
       beep(740, 0.09);
     }
@@ -1122,8 +1141,9 @@
     }
 
     function parseMMSS(str) {
-      const [m, s] = str.split(":").map(Number);
-      return (m || 0) * 60 + (s || 0);
+      const m = String(str || "").match(/(\d{2}):(\d{2})/);
+      if (!m) return 0;
+      return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
     }
 
     function analyzePacing(splitsArr) {
@@ -2025,15 +2045,55 @@
     function renderWodTemplates() {
       const wrap = document.getElementById("wodTemplatesWrap");
       wrap.innerHTML = "";
-      WOD_TEMPLATES.forEach((tpl) => {
+      const allTpls = [
+        ...(state.customTemplates || []).map((t) => ({ ...t, isCustom: true })),
+        ...WOD_TEMPLATES
+      ];
+      document.getElementById("quickWodCountBadge").textContent = `${allTpls.length} шт`;
+      allTpls.forEach((tpl) => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "text-[11px] px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-red-600/20 border border-white/10 text-zinc-200 font-medium transition active:scale-95";
-        btn.textContent = tpl.label;
-        btn.addEventListener("click", () => applyWodTemplate(tpl));
+        btn.className = tpl.isCustom
+          ? "text-[11px] px-3 py-1.5 rounded-full bg-red-600/20 hover:bg-red-600/30 border border-red-500/35 text-red-200 font-semibold transition active:scale-95"
+          : "text-[11px] px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-red-600/20 border border-white/10 text-zinc-200 font-medium transition active:scale-95";
+        btn.textContent = tpl.isCustom ? `★ ${tpl.label}` : tpl.label;
+        btn.addEventListener("click", () => {
+          applyWodTemplate(tpl);
+          document.getElementById("quickWodPanel").classList.add("hidden");
+          document.getElementById("quickWodArrow").textContent = "▾";
+        });
         wrap.appendChild(btn);
       });
     }
+
+    document.getElementById("toggleQuickWodBtn").addEventListener("click", () => {
+      const panel = document.getElementById("quickWodPanel");
+      const hidden = panel.classList.toggle("hidden");
+      document.getElementById("quickWodArrow").textContent = hidden ? "▾" : "▴";
+    });
+
+    document.getElementById("saveTemplateBtn").addEventListener("click", () => {
+      const title = document.getElementById("wTitle").value.trim();
+      if (!title) return showToast("Сначала заполните задание комплекса", "error");
+      const exercises = [];
+      document.querySelectorAll("#exerciseList .exercise-row").forEach((row) => {
+        const name = row.querySelector(".ex-name").value.trim();
+        const weight = row.querySelector(".ex-weight").value.trim();
+        const reps = row.querySelector(".ex-reps").value.trim();
+        if (name || weight || reps) exercises.push({ name: name || "Упражнение", weight, reps });
+      });
+      const shortLabel = title.length > 26 ? title.slice(0, 26) + "…" : title;
+      const timerCfg = timerMode === "e230"
+        ? { mode: "e230", sec: parseInt(document.getElementById("timerIntervalSec").value || "150", 10), rounds: parseInt(document.getElementById("timerTotalRounds").value || "6", 10) }
+        : timerMode === "amrap"
+          ? { mode: "amrap", min: parseInt(document.getElementById("timerAmrapMin").value || "15", 10) }
+          : { mode: "fortime" };
+      state.customTemplates = state.customTemplates || [];
+      state.customTemplates.unshift({ label: shortLabel, format: selectedFormat, timer: timerCfg, title, exercises });
+      saveState();
+      renderWodTemplates();
+      showToast("Комплекс сохранён в ваши шаблоны!");
+    });
 
     function generateRandomWod(kind) {
       const e = pickRand(WOD_POOL.ergs);
