@@ -221,6 +221,30 @@
     <!-- VIEW 2: WORKOUT LOG + FULLSCREEN WOD TIMER + SMART WEIGHT HINTS -->
     <section id="view-workout" class="hidden space-y-4">
 
+      <!-- WOD Generator & Smart Import Card -->
+      <div class="ios-card rounded-3xl p-4 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-bold text-white">Быстрый старт WOD</h2>
+            <p class="text-[11px] text-zinc-400">Готовые комплексы, генератор или вставка из ветки</p>
+          </div>
+          <button id="pasteWodBtn" type="button" class="px-3 py-1.5 rounded-full bg-red-500/15 hover:bg-red-500/25 border border-red-500/35 text-red-400 text-[11px] font-bold transition active:scale-95">
+            Вставить из буфера
+          </button>
+        </div>
+
+        <div class="flex flex-wrap gap-1.5" id="wodTemplatesWrap"></div>
+
+        <div class="grid grid-cols-2 gap-2 pt-0.5">
+          <button id="genE230Btn" type="button" class="py-2 px-3 rounded-2xl bg-white/[0.06] hover:bg-white/10 border border-white/10 text-zinc-200 text-[11px] font-semibold transition active:scale-95">
+            🎲 Сгенерировать 2:30 × 6
+          </button>
+          <button id="genAmrapBtn" type="button" class="py-2 px-3 rounded-2xl bg-white/[0.06] hover:bg-white/10 border border-white/10 text-zinc-200 text-[11px] font-semibold transition active:scale-95">
+            🎲 Сгенерировать AMRAP 15
+          </button>
+        </div>
+      </div>
+
       <!-- WOD Timer Card -->
       <div class="ios-card rounded-3xl p-5 space-y-4">
         <div class="flex items-center justify-between gap-2">
@@ -318,6 +342,16 @@
               <label for="wDuration" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Длительность (мин)</label>
               <input id="wDuration" type="number" min="1" max="240" placeholder="60" class="input-ios w-full rounded-2xl px-3.5 py-2.5 text-sm" />
             </div>
+          </div>
+
+          <!-- Pacing Coach Split Analysis -->
+          <div id="pacingCoachBox" class="hidden ios-subcard rounded-2xl p-3.5 space-y-2 border border-red-500/25">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-white">Разбор темпа (Pacing Coach)</span>
+              <span id="pacingBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-600/20 text-red-400"></span>
+            </div>
+            <div id="pacingBars" class="flex items-end gap-1.5 h-12 pt-1"></div>
+            <p id="pacingSummary" class="text-[11px] text-zinc-300 leading-relaxed"></p>
           </div>
 
           <!-- Dynamic Exercises with SugarWOD-style Past Weight Hint -->
@@ -1087,6 +1121,56 @@
       }, 1000);
     }
 
+    function parseMMSS(str) {
+      const [m, s] = str.split(":").map(Number);
+      return (m || 0) * 60 + (s || 0);
+    }
+
+    function analyzePacing(splitsArr) {
+      if (!splitsArr || splitsArr.length < 2) return null;
+      const secs = splitsArr.map(parseMMSS).filter((n) => n > 0);
+      if (secs.length < 2) return null;
+      const avg = Math.round(secs.reduce((a, b) => a + b, 0) / secs.length);
+      const minS = Math.min(...secs);
+      const maxS = Math.max(...secs);
+      const half = Math.floor(secs.length / 2);
+      const firstHalf = secs.slice(0, half).reduce((a, b) => a + b, 0) / half;
+      const secondHalf = secs.slice(half).reduce((a, b) => a + b, 0) / (secs.length - half);
+      const diff = Math.round(secondHalf - firstHalf);
+
+      let badge = "Ровный темп";
+      let summary = `Средний раунд: ${fmtMMSS(avg)} (лучший ${fmtMMSS(minS)}, медл. ${fmtMMSS(maxS)}). Отличный контроль темпа!`;
+      if (diff >= 12) {
+        badge = `Просадка +${diff}с`;
+        summary = `Средний раунд: ${fmtMMSS(avg)}. Во второй половине темп упал на +${diff} сек/раунд — старт был слишком быстрым.`;
+      } else if (diff <= -8) {
+        badge = "Негативный сплит";
+        summary = `Средний раунд: ${fmtMMSS(avg)}. Ускорились во второй половине на ${Math.abs(diff)} сек/раунд — мощная концовка!`;
+      }
+      return { secs, maxS, badge, summary };
+    }
+
+    function renderPacingBox(splitsArr) {
+      const box = document.getElementById("pacingCoachBox");
+      const analysis = analyzePacing(splitsArr);
+      if (!analysis) {
+        box.classList.add("hidden");
+        return;
+      }
+      box.classList.remove("hidden");
+      document.getElementById("pacingBadge").textContent = analysis.badge;
+      document.getElementById("pacingSummary").textContent = analysis.summary;
+      const bars = document.getElementById("pacingBars");
+      bars.innerHTML = "";
+      analysis.secs.forEach((sec, idx) => {
+        const hPct = Math.max(20, Math.round((sec / analysis.maxS) * 100));
+        const col = document.createElement("div");
+        col.className = "flex-1 flex flex-col items-center gap-1 h-full justify-end";
+        col.innerHTML = `<div class="w-full rounded-t-md bg-red-500/80" style="height:${hPct}%"></div><span class="text-[9px] text-zinc-400 tabular-nums">${idx + 1}</span>`;
+        bars.appendChild(col);
+      });
+    }
+
     function applyTimerToResult() {
       const resInput = document.getElementById("wResult");
       const durInput = document.getElementById("wDuration");
@@ -1098,7 +1182,8 @@
         resInput.value = fmtMMSS(elapsedSec);
       }
       if (elapsedSec > 0) durInput.value = String(Math.max(1, Math.round(elapsedSec / 60)));
-      showToast("Результат подставлен!");
+      renderPacingBox(splits);
+      showToast("Результат и темп подставлены!");
     }
 
     document.querySelectorAll(".tmode-btn").forEach((btn) => {
@@ -1465,7 +1550,11 @@
       if (workout) {
         lines.push(`Комплекс (${workout.format}): ${workout.title}`);
         lines.push(`Результат: ${workout.result}${workout.duration ? ` | время: ${workout.duration} мин` : ""}`);
-        if (workout.splits && workout.splits.length > 0) lines.push(`Сплиты: ${workout.splits.join(", ")}`);
+        if (workout.splits && workout.splits.length > 0) {
+          lines.push(`Сплиты: ${workout.splits.join(", ")}`);
+          const p = analyzePacing(workout.splits);
+          if (p) lines.push(`Темп: ${p.badge} — ${p.summary}`);
+        }
         if (workout.exercises && workout.exercises.length > 0) {
           lines.push(`Веса: ${workout.exercises.map((ex) => `${ex.name}${ex.weight ? " " + ex.weight : ""}${ex.reps ? " x " + ex.reps : ""}`).join("; ")}`);
         }
@@ -1840,6 +1929,205 @@
       showToast("Загружен пример данных");
     });
 
+    // --- WOD Library, Offline Generator & Smart Text Parser ---
+    const WOD_TEMPLATES = [
+      {
+        label: "E2:30 × 6 (Гиря + Эрго)",
+        format: "E2:30OM (каждые 2:30)",
+        timer: { mode: "e230", sec: 150, rounds: 6 },
+        title: "Каждые 2:30 × 6 раундов: 12 махов гирей 16 кг, 10 жимовых швунгов гантелей 12.5 кг, 12 кал гребля",
+        exercises: [
+          { name: "Махи гирей", weight: "16 кг", reps: "12" },
+          { name: "Швунги гантелей", weight: "12.5 кг", reps: "10" },
+          { name: "Гребля Concept2", weight: "12 кал", reps: "6 рд" }
+        ]
+      },
+      {
+        label: "AMRAP 15 (Фулл-боди)",
+        format: "AMRAP 15 мин",
+        timer: { mode: "amrap", min: 15 },
+        title: "AMRAP 15 мин: 10 приседаний с гантелями, 10 отжиманий, 15 скручиваний / 200м байк",
+        exercises: [
+          { name: "Приседания с гантелями", weight: "12.5 кг", reps: "10" },
+          { name: "Отжимания", weight: "Свой вес", reps: "10" }
+        ]
+      },
+      {
+        label: "Силовая + Финишер 7 мин",
+        format: "Силовая + WOD",
+        timer: { mode: "fortime" },
+        title: "Силовая: Приседания 5×5 (60 кг) + Становая 4×6 (60 кг). Финишер 7 мин AMRAP: 12 махов гирей 16 кг + 8 бёрпи",
+        exercises: [
+          { name: "Приседания со штангой", weight: "60 кг", reps: "5×5" },
+          { name: "Становая тяга", weight: "60 кг", reps: "4×6" },
+          { name: "Махи гирей", weight: "16 кг", reps: "12" }
+        ]
+      },
+      {
+        label: "For Time (Гребля + Гантели)",
+        format: "For Time",
+        timer: { mode: "fortime" },
+        title: "For Time (3 раунда): 400м гребля, 15 рывков гантели 12.5 кг (попеременно), 12 зашагиваний на тумбу",
+        exercises: [
+          { name: "Рывок гантели", weight: "12.5 кг", reps: "15" },
+          { name: "Зашагивания на тумбу", weight: "Свой вес", reps: "12" }
+        ]
+      }
+    ];
+
+    const WOD_POOL = {
+      ergs: [
+        { name: "Гребля Concept2", unit: "12 кал", amrap: "250 м гребля" },
+        { name: "Велотренажёр BikeErg", unit: "14 кал", amrap: "400 м байк" },
+        { name: "Лыжный тренажёр SkiErg", unit: "10 кал", amrap: "200 м лыжи" }
+      ],
+      hinge: [
+        { name: "Махи гирей", weight: "16 кг", reps: "12" },
+        { name: "Становая тяга", weight: "60 кг", reps: "8" },
+        { name: "Рывок гантели", weight: "12.5 кг", reps: "10" }
+      ],
+      push: [
+        { name: "Швунги гантелей", weight: "12.5 кг", reps: "10" },
+        { name: "Жим штанги стоя", weight: "35 кг", reps: "8" },
+        { name: "Отжимания от пола/тумбы", weight: "Свой вес", reps: "12" }
+      ],
+      squat: [
+        { name: "Гоблет-приседания с гирей", weight: "16 кг", reps: "12" },
+        { name: "Приседания со штангой", weight: "60 кг", reps: "8" },
+        { name: "Трастеры с гантелями", weight: "10 кг", reps: "10" }
+      ],
+      core: [
+        { name: "Бёрпи", weight: "Свой вес", reps: "8" },
+        { name: "Тяга в кольцах", weight: "Свой вес", reps: "12" },
+        { name: "Ситапы / планка", weight: "Свой вес", reps: "15" }
+      ]
+    };
+
+    function pickRand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    function applyWodTemplate(tpl) {
+      selectedFormat = tpl.format;
+      renderFormatChips();
+      document.getElementById("wTitle").value = tpl.title;
+      document.getElementById("exerciseList").innerHTML = "";
+      (tpl.exercises || []).forEach((ex) => addExerciseRow(ex.name, ex.weight, ex.reps));
+      if (tpl.timer) {
+        const modeBtn = document.querySelector(`.tmode-btn[data-tmode="${tpl.timer.mode}"]`);
+        if (modeBtn) modeBtn.click();
+        if (tpl.timer.sec) document.getElementById("timerIntervalSec").value = String(tpl.timer.sec);
+        if (tpl.timer.rounds) document.getElementById("timerTotalRounds").value = String(tpl.timer.rounds);
+        if (tpl.timer.min) document.getElementById("timerAmrapMin").value = String(tpl.timer.min);
+        resetTimer();
+      }
+      showToast("Комплекс и таймер настроены!");
+    }
+
+    function renderWodTemplates() {
+      const wrap = document.getElementById("wodTemplatesWrap");
+      wrap.innerHTML = "";
+      WOD_TEMPLATES.forEach((tpl) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "text-[11px] px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-red-600/20 border border-white/10 text-zinc-200 font-medium transition active:scale-95";
+        btn.textContent = tpl.label;
+        btn.addEventListener("click", () => applyWodTemplate(tpl));
+        wrap.appendChild(btn);
+      });
+    }
+
+    function generateRandomWod(kind) {
+      const e = pickRand(WOD_POOL.ergs);
+      const h = pickRand(WOD_POOL.hinge);
+      const p = pickRand(WOD_POOL.push);
+      const sq = pickRand(WOD_POOL.squat);
+      const c = pickRand(WOD_POOL.core);
+
+      if (kind === "e230") {
+        applyWodTemplate({
+          format: "E2:30OM (каждые 2:30)",
+          timer: { mode: "e230", sec: 150, rounds: 6 },
+          title: `Каждые 2:30 × 6 раундов: ${h.reps} ${h.name} (${h.weight}), ${p.reps} ${p.name} (${p.weight}), ${e.unit} ${e.name}`,
+          exercises: [h, p, { name: e.name, weight: e.unit, reps: "6 рд" }]
+        });
+      } else {
+        applyWodTemplate({
+          format: "AMRAP 15 мин",
+          timer: { mode: "amrap", min: 15 },
+          title: `AMRAP 15 мин: ${sq.reps} ${sq.name} (${sq.weight}), ${c.reps} ${c.name}, ${e.amrap}`,
+          exercises: [sq, c, { name: e.name, weight: e.amrap, reps: "AMRAP" }]
+        });
+      }
+    }
+
+    function parseWodText(text) {
+      const lower = text.toLowerCase();
+      let mode = "fortime";
+      let format = "For Time";
+      let sec = 150, rounds = 6, min = 15;
+
+      if (lower.includes("2:30") || lower.includes("2.30") || lower.includes("e2:30") || lower.includes("emom")) {
+        mode = "e230";
+        format = lower.includes("2:30") || lower.includes("2.30") ? "E2:30OM (каждые 2:30)" : "EMOM";
+        sec = (lower.includes("2:30") || lower.includes("2.30")) ? 150 : 60;
+        const rMatch = lower.match(/(?:x|×|на)\s*(\d+)\s*(?:рд|раунд|мин)?|(\d+)\s*(?:раунд|рд)/);
+        if (rMatch) rounds = parseInt(rMatch[1] || rMatch[2], 10) || 6;
+      } else if (lower.includes("amrap") || lower.includes("амрап")) {
+        mode = "amrap";
+        format = "AMRAP 15 мин";
+        const mMatch = lower.match(/(\d+)\s*(?:мин|min)/);
+        if (mMatch) min = parseInt(mMatch[1], 10) || 15;
+      }
+
+      const exMatches = [];
+      const knownEx = ["махи", "гир", "швунг", "жим", "присед", "станов", "рывок", "трастер", "гребл", "байк", "лыж", "бёрпи", "берпи", "подтяг", "отжим", "тумб"];
+      text.split(/[,;\n]+/).forEach((seg) => {
+        const segL = seg.trim().toLowerCase();
+        if (!segL || !knownEx.some((k) => segL.includes(k))) return;
+        const wMatch = seg.match(/(\d+(?:[.,]\d+)?\s*(?:кг|kg|кал|м|m))/i);
+        const rMatch = seg.match(/^(\d+)\s+/);
+        let cleanName = seg.trim()
+          .replace(/^\d+\s+/, "")
+          .replace(/\d+(?:[.,]\d+)?\s*(?:кг|kg|кал|м|m)/gi, "")
+          .replace(/[()]/g, "")
+          .trim();
+        if (cleanName.length > 2) {
+          exMatches.push({
+            name: cleanName.charAt(0).toUpperCase() + cleanName.slice(1),
+            weight: wMatch ? wMatch[1] : "",
+            reps: rMatch ? rMatch[1] : ""
+          });
+        }
+      });
+
+      applyWodTemplate({
+        format,
+        timer: { mode, sec, rounds, min },
+        title: text.trim(),
+        exercises: exMatches.length ? exMatches : [{ name: "Махи гирей", weight: "", reps: "" }]
+      });
+    }
+
+    document.getElementById("genE230Btn").addEventListener("click", () => generateRandomWod("e230"));
+    document.getElementById("genAmrapBtn").addEventListener("click", () => generateRandomWod("amrap"));
+    document.getElementById("pasteWodBtn").addEventListener("click", async () => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const clip = await navigator.clipboard.readText();
+          if (clip && clip.trim().length > 3) {
+            parseWodText(clip);
+            return;
+          }
+        }
+      } catch (e) {}
+      const existing = document.getElementById("wTitle").value.trim();
+      if (existing.length > 3) {
+        parseWodText(existing);
+      } else {
+        showToast("Вставьте текст WOD в поле «Комплекс» и нажмите кнопку", "error");
+        document.getElementById("wTitle").focus();
+      }
+    });
+
     // --- Init ---
     selectedDate = todayISO();
     loadState();
@@ -1847,6 +2135,7 @@
     renderTagChips("morningTagsWrap", MORNING_TAGS, selectedMorningTags);
     renderTagChips("workoutTagsWrap", WORKOUT_TAGS, selectedWorkoutTags);
     renderFormatChips();
+    renderWodTemplates();
     addExerciseRow("Махи гирей", "", "");
     renderPresets();
     renderStats();
