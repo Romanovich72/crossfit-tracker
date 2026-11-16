@@ -1,4 +1,4 @@
-const CACHE_NAME = "wod-tracker-v3-4";
+const CACHE_NAME = "wod-tracker-v4-0";
 const ASSETS = [
   "./",
   "./index.html",

@@ -152,7 +152,7 @@
     </div>
   </header>
 
-  <main id="appMain" class="w-full max-w-xl mx-auto pt-3.5 pb-6 space-y-4">
+  <main id="appMain" class="w-full max-w-xl mx-auto pt-2.5 pb-5 space-y-3 no-scrollbar">
 
     <!-- Dismissible PWA Install Banner -->
     <div id="installHintBanner" class="hidden ios-card rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-2 border border-red-500/25">
@@ -162,97 +162,120 @@
       <button id="dismissInstallHintBtn" type="button" class="shrink-0 w-7 h-7 rounded-full bg-white/[0.07] text-zinc-400 hover:text-white text-xs font-bold">×</button>
     </div>
 
-    <!-- Summary Strip with Delta -->
-    <section class="grid grid-cols-3 gap-2.5">
-      <div class="ios-card rounded-2xl p-3">
-        <div class="text-[11px] text-zinc-400 font-medium">Вес</div>
-        <div class="text-[19px] font-bold text-white tracking-tight mt-0.5 tabular-nums" id="statLastWeight">—</div>
-        <div class="text-[10px] text-red-400 font-medium mt-0.5 tabular-nums" id="statWeightAvg">7д ср: —</div>
-      </div>
-      <div class="ios-card rounded-2xl p-3">
-        <div class="text-[11px] text-zinc-400 font-medium">Тренировок</div>
-        <div class="text-[19px] font-bold text-white tracking-tight mt-0.5 tabular-nums" id="statWorkoutsCount">0</div>
-        <div class="text-[10px] text-zinc-400 mt-0.5 truncate" id="statLastWorkout">Нет записей</div>
-      </div>
-      <div class="ios-card rounded-2xl p-3">
-        <div class="text-[11px] text-zinc-400 font-medium">Ккал за день</div>
-        <div class="text-[19px] font-bold text-white tracking-tight mt-0.5 tabular-nums" id="statTodayKcal">0</div>
-        <div class="text-[10px] text-red-400 font-medium mt-0.5 tabular-nums" id="statTodayProtein">Белок: 0 г</div>
-      </div>
-    </section>
-
-    <!-- VIEW 1: MORNING CHECK-IN (NO FORM CLUTTER) -->
-    <section id="view-morning" class="space-y-4">
-      <div class="ios-card rounded-3xl p-5 space-y-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-lg font-bold tracking-tight text-white">Утренний чек-ин</h2>
-            <p class="text-xs text-zinc-400 mt-0.5" id="morningDateText">Сегодня</p>
-          </div>
-          <div class="relative w-12 h-12 flex items-center justify-center">
-            <svg class="w-12 h-12 -rotate-90" viewBox="0 0 48 48">
-              <circle cx="24" cy="24" r="19" fill="none" stroke="#22242d" stroke-width="4.5" />
-              <circle id="readinessRing" cx="24" cy="24" r="19" fill="none" stroke="#ef4444" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="119.4" stroke-dashoffset="35.8" />
-            </svg>
-            <span id="readinessScoreText" class="absolute text-[11px] font-bold text-white tabular-nums">7.0</span>
-          </div>
+    <!-- Apple Fitness Style Triple-Ring Hero Card + Load Traffic Light + Weekly Streak -->
+    <section class="ios-card rounded-3xl p-3.5 space-y-3 relative overflow-hidden">
+      <div class="absolute -top-10 -left-10 w-36 h-36 bg-red-600/15 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="flex items-center gap-3.5 relative">
+        <!-- Triple Concentric Rings -->
+        <div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
+          <svg class="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
+            <!-- Outer: Readiness (Red) -->
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#221518" stroke-width="7.5" />
+            <circle id="heroRingReady" cx="50" cy="50" r="42" fill="none" stroke="#ef4444" stroke-width="7.5" stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="79" style="transition: stroke-dashoffset 0.4s ease;" />
+            <!-- Middle: Workout (Coral/Orange) -->
+            <circle cx="50" cy="50" r="32" fill="none" stroke="#261b14" stroke-width="7.5" />
+            <circle id="heroRingWod" cx="50" cy="50" r="32" fill="none" stroke="#fb923c" stroke-width="7.5" stroke-linecap="round" stroke-dasharray="201.1" stroke-dashoffset="201.1" style="transition: stroke-dashoffset 0.4s ease;" />
+            <!-- Inner: Nutrition (White/Ice) -->
+            <circle cx="50" cy="50" r="22" fill="none" stroke="#1c1e26" stroke-width="7.5" />
+            <circle id="heroRingFood" cx="50" cy="50" r="22" fill="none" stroke="#f4f4f5" stroke-width="7.5" stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="138.2" style="transition: stroke-dashoffset 0.4s ease;" />
+          </svg>
+          <span id="readinessScoreText" class="absolute text-[11px] font-extrabold text-white tabular-nums">7.0</span>
         </div>
 
-        <form id="morningForm" class="space-y-4">
-          <div class="grid grid-cols-2 gap-3">
+        <!-- Right Metrics & Traffic Light -->
+        <div class="flex-1 min-w-0 space-y-2">
+          <div id="trafficLightBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span id="trafficLightText">Готов к нагрузке</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
             <div>
-              <label for="mWeight" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Вес (кг)</label>
-              <div class="flex items-center gap-1.5">
-                <button type="button" id="weightMinusBtn" class="w-10 h-11 rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">−</button>
-                <input id="mWeight" type="number" step="0.1" min="30" max="250" value="85.4" required class="input-ios w-full rounded-2xl px-1 py-2.5 text-center text-base font-bold tabular-nums" />
-                <button type="button" id="weightPlusBtn" class="w-10 h-11 rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">+</button>
+              <div class="text-[10px] text-zinc-400">Вес</div>
+              <div class="text-sm font-bold text-white tabular-nums leading-tight" id="statLastWeight">—</div>
+              <div class="text-[9px] text-red-400 tabular-nums truncate" id="statWeightAvg">7д: —</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-zinc-400">Трен.</div>
+              <div class="text-sm font-bold text-white tabular-nums leading-tight" id="statWorkoutsCount">0</div>
+              <div class="text-[9px] text-zinc-400 truncate" id="statLastWorkout">Нет</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-zinc-400">Ккал</div>
+              <div class="text-sm font-bold text-white tabular-nums leading-tight" id="statTodayKcal">0</div>
+              <div class="text-[9px] text-zinc-300 tabular-nums truncate" id="statTodayProtein">Б: 0г</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mon-Sun Weekly Activity Strip -->
+      <div class="pt-2 border-t border-white/[0.07] flex items-center justify-between gap-1" id="weeklyStreakBar"></div>
+    </section>
+
+    <!-- VIEW 1: COMPACT MORNING CHECK-IN (FITS ON ONE IPHONE SCREEN) -->
+    <section id="view-morning" class="space-y-3">
+      <div class="ios-card rounded-3xl p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-bold tracking-tight text-white">Утренний чек-ин</h2>
+          <span class="text-[11px] text-zinc-400 font-medium" id="morningDateText">Сегодня</span>
+        </div>
+
+        <form id="morningForm" class="space-y-3">
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label for="mWeight" class="block text-[10px] font-medium text-zinc-400 mb-1">Вес (кг)</label>
+              <div class="flex items-center gap-1">
+                <button type="button" id="weightMinusBtn" class="w-9 h-9 rounded-xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-sm active:scale-95 transition">−</button>
+                <input id="mWeight" type="number" step="0.1" min="30" max="250" value="85.4" required class="input-ios w-full rounded-xl px-1 py-1.5 text-center text-sm font-bold tabular-nums" />
+                <button type="button" id="weightPlusBtn" class="w-9 h-9 rounded-xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-sm active:scale-95 transition">+</button>
               </div>
             </div>
             <div>
-              <label for="mSleepHours" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Сон (ч)</label>
-              <div class="flex items-center gap-1.5">
-                <button type="button" id="sleepMinusBtn" class="w-10 h-11 rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">−</button>
-                <input id="mSleepHours" type="number" step="0.5" min="0" max="16" value="6.5" required class="input-ios w-full rounded-2xl px-1 py-2.5 text-center text-base font-bold tabular-nums" />
-                <button type="button" id="sleepPlusBtn" class="w-10 h-11 rounded-2xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-base active:scale-95 transition">+</button>
+              <label for="mSleepHours" class="block text-[10px] font-medium text-zinc-400 mb-1">Сон (ч)</label>
+              <div class="flex items-center gap-1">
+                <button type="button" id="sleepMinusBtn" class="w-9 h-9 rounded-xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-sm active:scale-95 transition">−</button>
+                <input id="mSleepHours" type="number" step="0.5" min="0" max="16" value="6.5" required class="input-ios w-full rounded-xl px-1 py-1.5 text-center text-sm font-bold tabular-nums" />
+                <button type="button" id="sleepPlusBtn" class="w-9 h-9 rounded-xl bg-white/[0.06] hover:bg-white/10 text-white font-bold text-sm active:scale-95 transition">+</button>
               </div>
             </div>
           </div>
 
-          <div class="ios-subcard rounded-2xl p-3.5 space-y-3.5">
+          <div class="ios-subcard rounded-2xl p-3 space-y-2.5">
             <div>
-              <div class="flex justify-between text-xs text-zinc-300 mb-1.5">
-                <label for="mSleepQuality" class="font-medium">Качество сна</label>
+              <div class="flex justify-between text-[11px] text-zinc-300 mb-1">
+                <label for="mSleepQuality" class="font-medium">🌙 Качество сна</label>
                 <span class="text-red-400 font-bold tabular-nums" id="mSleepQualityVal">7/10</span>
               </div>
               <input id="mSleepQuality" type="range" min="1" max="10" value="7" class="ios-slider" />
             </div>
             <div>
-              <div class="flex justify-between text-xs text-zinc-300 mb-1.5">
-                <label for="mEnergy" class="font-medium">Энергия и бодрость</label>
+              <div class="flex justify-between text-[11px] text-zinc-300 mb-1">
+                <label for="mEnergy" class="font-medium">⚡ Энергия</label>
                 <span class="text-red-400 font-bold tabular-nums" id="mEnergyVal">7/10</span>
               </div>
               <input id="mEnergy" type="range" min="1" max="10" value="7" class="ios-slider" />
             </div>
             <div>
-              <div class="flex justify-between text-xs text-zinc-300 mb-1.5">
-                <label for="mRecovery" class="font-medium">Восстановление мышц</label>
+              <div class="flex justify-between text-[11px] text-zinc-300 mb-1">
+                <label for="mRecovery" class="font-medium">💪 Восстановление мышц</label>
                 <span class="text-red-400 font-bold tabular-nums" id="mRecoveryVal">7/10</span>
               </div>
               <input id="mRecovery" type="range" min="1" max="10" value="7" class="ios-slider" />
             </div>
           </div>
 
-          <!-- WHOOP-style Quick Morning Tags -->
-          <div class="space-y-2">
+          <!-- Horizontal 1-Tap Tags + Optional Note -->
+          <div class="space-y-1.5">
             <div class="flex items-center justify-between">
-              <span class="text-[11px] font-medium text-zinc-400">Самочувствие в 1 тап</span>
+              <span class="text-[10px] font-medium text-zinc-400">Теги в 1 тап</span>
               <button type="button" id="toggleMorningNoteBtn" class="text-[11px] text-red-400 font-semibold">+ Заметка</button>
             </div>
-            <div id="morningTagsWrap" class="flex flex-wrap gap-1.5"></div>
-            <input id="mNote" type="text" placeholder="Короткая заметка..." class="hidden input-ios w-full rounded-2xl px-3.5 py-2.5 text-sm" />
+            <div id="morningTagsWrap" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
+            <input id="mNote" type="text" placeholder="Короткая заметка..." class="hidden input-ios w-full rounded-xl px-3 py-2 text-xs" />
           </div>
 
-          <button type="submit" class="red-glow-btn w-full py-3.5 rounded-2xl text-white font-bold text-sm tracking-tight transition active:scale-[0.98]">
+          <button type="submit" class="red-glow-btn w-full py-3 rounded-2xl text-white font-bold text-sm tracking-tight transition active:scale-[0.98]">
             Сохранить чек-ин
           </button>
         </form>
@@ -908,8 +931,8 @@
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = active
-          ? "text-[11px] px-3 py-1.5 rounded-full bg-red-600 text-white font-semibold transition active:scale-95"
-          : "text-[11px] px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/10 text-zinc-300 font-medium transition active:scale-95";
+          ? "shrink-0 text-[11px] px-3 py-1.5 rounded-full bg-red-600 text-white font-semibold transition active:scale-95"
+          : "shrink-0 text-[11px] px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/10 text-zinc-300 font-medium transition active:scale-95";
         btn.textContent = tag;
         btn.addEventListener("click", () => {
           if (selectedSet.has(tag)) selectedSet.delete(tag);
@@ -959,9 +982,27 @@
       const en = parseInt(document.getElementById("mEnergy").value, 10);
       const rc = parseInt(document.getElementById("mRecovery").value, 10);
       const avg = (sq + en + rc) / 3;
-      const circ = 119.4;
-      document.getElementById("readinessRing").setAttribute("stroke-dashoffset", String(circ - (avg / 10) * circ));
+      const readyCirc = 263.9;
+      document.getElementById("heroRingReady").setAttribute("stroke-dashoffset", String(readyCirc - (avg / 10) * readyCirc));
       document.getElementById("readinessScoreText").textContent = avg.toFixed(1);
+
+      // Update Traffic Light Verdict
+      const badge = document.getElementById("trafficLightBadge");
+      const text = document.getElementById("trafficLightText");
+      const recentRpe = state.workouts.length ? Number(state.workouts[0].rpe || 7) : 7;
+      if (avg >= 7.2 && recentRpe <= 8) {
+        badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold";
+        badge.querySelector("span").className = "w-1.5 h-1.5 rounded-full bg-emerald-400";
+        text.textContent = "Зелёный: можно на максимум";
+      } else if (avg >= 5.2) {
+        badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-bold";
+        badge.querySelector("span").className = "w-1.5 h-1.5 rounded-full bg-amber-400";
+        text.textContent = "Жёлтый: рабочий темп";
+      } else {
+        badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/15 border border-red-500/35 text-red-300 text-[10px] font-bold";
+        badge.querySelector("span").className = "w-1.5 h-1.5 rounded-full bg-red-400";
+        text.textContent = "Красный: техника и лёгкое кардио";
+      }
     }
 
     document.getElementById("weightMinusBtn").addEventListener("click", () => {
@@ -1751,7 +1792,43 @@
       const tk = Math.round(dayFoods.reduce((s, x) => s + Number(x.kcal || 0), 0));
       const tp = Math.round(dayFoods.reduce((s, x) => s + Number(x.protein || 0), 0));
       document.getElementById("statTodayKcal").textContent = String(tk);
-      document.getElementById("statTodayProtein").textContent = `Белок: ${tp} г`;
+      document.getElementById("statTodayProtein").textContent = `Б: ${tp}г`;
+
+      // Update Middle (WOD) and Inner (Food) Hero Rings
+      const gKcal = (state.goals && state.goals.kcal) ? state.goals.kcal : 2000;
+      const foodPct = Math.min(1, tk / Math.max(1, gKcal));
+      document.getElementById("heroRingFood").setAttribute("stroke-dashoffset", String(138.2 * (1 - foodPct)));
+
+      const hasWodSelected = state.workouts.some((w) => w.date === targetDate);
+      const wodPct = hasWodSelected ? 1 : Math.min(0.85, state.workouts.length > 0 ? 0.35 : 0);
+      document.getElementById("heroRingWod").setAttribute("stroke-dashoffset", String(201.1 * (1 - wodPct)));
+
+      // Render Mon-Sun Weekly Activity Strip
+      const bar = document.getElementById("weeklyStreakBar");
+      if (bar) {
+        bar.innerHTML = "";
+        const activeDates = new Set(state.workouts.map((w) => w.date));
+        const now = new Date();
+        const jsDay = now.getDay(); // 0=Sun..6=Sat
+        const mondayOffset = jsDay === 0 ? 6 : jsDay - 1;
+        const labels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+        for (let i = 0; i < 7; i++) {
+          const d = new Date();
+          d.setDate(now.getDate() - mondayOffset + i);
+          const iso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split("T")[0];
+          const done = activeDates.has(iso);
+          const isToday = iso === todayISO();
+          const pill = document.createElement("div");
+          pill.className = done
+            ? "flex-1 py-1 rounded-xl bg-red-600/25 border border-red-500/50 text-center"
+            : isToday
+              ? "flex-1 py-1 rounded-xl bg-white/10 border border-white/25 text-center"
+              : "flex-1 py-1 rounded-xl bg-white/[0.03] text-center";
+          pill.innerHTML = `<div class="text-[9px] font-bold ${done ? "text-red-300" : isToday ? "text-white" : "text-zinc-500"}">${labels[i]}</div><div class="w-1.5 h-1.5 rounded-full mx-auto mt-0.5 ${done ? "bg-red-500" : "bg-zinc-700"}"></div>`;
+          bar.appendChild(pill);
+        }
+      }
+      updateReadinessRing();
     }
 
     function calcWeightTrend(mornings) {
