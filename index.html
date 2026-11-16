@@ -204,7 +204,7 @@
 
     <!-- VIEW 1: COMPACT MORNING CHECK-IN (FITS ON ONE IPHONE SCREEN) -->
     <section id="view-morning" class="space-y-3">
-      <div class="ios-card rounded-3xl p-3.5 space-y-2.5">
+      <div class="ios-card rounded-3xl p-4 space-y-3">
         <div class="flex items-center justify-between">
           <h2 class="text-base font-bold tracking-tight text-white">Утренний чек-ин</h2>
           <span class="text-[11px] text-zinc-400 font-medium" id="morningDateText">Сегодня</span>
@@ -264,7 +264,7 @@
             <input id="mNote" type="text" placeholder="Короткая заметка..." class="hidden input-ios w-full rounded-xl px-3 py-2 text-xs" />
           </div>
 
-          <button type="submit" class="red-glow-btn w-full py-2.5 rounded-2xl text-white font-bold text-sm tracking-tight transition active:scale-[0.98]">
+          <button type="submit" class="red-glow-btn w-full py-3 rounded-2xl text-white font-bold text-sm tracking-tight transition active:scale-[0.98]">
             Сохранить чек-ин
           </button>
         </form>
@@ -272,7 +272,7 @@
     </section>
 
     <!-- VIEW 2: WORKOUT LOG + FULLSCREEN WOD TIMER + SMART WEIGHT HINTS -->
-    <section id="view-workout" class="hidden space-y-4">
+    <section id="view-workout" class="hidden space-y-3">
 
       <!-- Collapsible WOD Generator & Templates Bar -->
       <div class="ios-card rounded-2xl px-4 py-3 space-y-3">
@@ -304,7 +304,7 @@
       </div>
 
       <!-- WOD Timer Card -->
-      <div class="ios-card rounded-3xl p-5 space-y-4">
+      <div class="ios-card rounded-3xl p-4 space-y-3">
         <div class="flex items-center justify-between gap-2">
           <div>
             <h2 class="text-base font-bold text-white">WOD Таймер</h2>
@@ -373,7 +373,7 @@
       </div>
 
       <!-- Workout Log Form -->
-      <div class="ios-card rounded-3xl p-5 space-y-4">
+      <div class="ios-card rounded-3xl p-4 space-y-3">
         <div class="flex items-center justify-between gap-2">
           <div>
             <h2 class="text-base font-bold text-white">Запись комплекса</h2>
@@ -457,10 +457,10 @@
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-            <button type="submit" class="red-glow-btn w-full py-3.5 rounded-2xl text-white font-bold text-sm transition active:scale-[0.98]">
+            <button type="submit" class="red-glow-btn w-full py-3 rounded-2xl text-white font-bold text-sm transition active:scale-[0.98]">
               Сохранить тренировку
             </button>
-            <button type="button" id="saveAndCopyBtn" class="w-full py-3.5 rounded-2xl bg-white/[0.08] hover:bg-white/15 border border-white/10 text-white font-semibold text-sm transition active:scale-[0.98]">
+            <button type="button" id="saveAndCopyBtn" class="w-full py-3 rounded-2xl bg-white/[0.08] hover:bg-white/15 border border-white/10 text-white font-semibold text-sm transition active:scale-[0.98]">
               Сохранить и скопировать отчёт
             </button>
           </div>
@@ -486,8 +486,8 @@
     </section>
 
     <!-- VIEW 3: FOOD / NUTRITION TRACKER -->
-    <section id="view-food" class="hidden space-y-4">
-      <div class="ios-card rounded-3xl p-5 space-y-4">
+    <section id="view-food" class="hidden space-y-3">
+      <div class="ios-card rounded-3xl p-4 space-y-3">
         <div class="flex items-center justify-between gap-2">
           <div>
             <h2 class="text-lg font-bold text-white">Питание за день</h2>
@@ -550,7 +550,7 @@
         </div>
       </div>
 
-      <div class="ios-card rounded-3xl p-5 space-y-3.5">
+      <div class="ios-card rounded-3xl p-4 space-y-3">
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-bold text-white">Добавить приём пищи</h3>
           <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold">Авто-КБЖУ</span>
@@ -585,15 +585,15 @@
         </form>
       </div>
 
-      <div class="ios-card rounded-3xl p-5 space-y-2.5">
+      <div class="ios-card rounded-3xl p-4 space-y-2.5">
         <h3 class="text-sm font-bold text-white">Съедено за дату</h3>
         <div id="foodDayList" class="space-y-2"></div>
       </div>
     </section>
 
     <!-- VIEW 4: HISTORY, CHART & BACKUP -->
-    <section id="view-history" class="hidden space-y-4">
-      <div class="ios-card rounded-3xl p-5 space-y-3">
+    <section id="view-history" class="hidden space-y-3">
+      <div class="ios-card rounded-3xl p-4 space-y-3">
         <div class="flex items-center justify-between">
           <h2 class="text-sm font-bold text-white">Вес и сглаженный тренд (кг)</h2>
           <span class="text-[11px] text-zinc-400" id="chartPointsLabel">Последние записи</span>
@@ -603,7 +603,7 @@
         </div>
       </div>
 
-      <div class="ios-card rounded-3xl p-5 space-y-3">
+      <div class="ios-card rounded-3xl p-4 space-y-3">
         <div class="flex items-center justify-between">
           <h2 class="text-sm font-bold text-white">Сон, энергия и нагрузка (RPE)</h2>
           <span class="text-[11px] text-zinc-400" id="recoveryChartLabel">Последние 14 дней</span>
@@ -613,7 +613,7 @@
         </div>
       </div>
 
-      <div class="ios-card rounded-3xl p-5 space-y-3">
+      <div class="ios-card rounded-3xl p-4 space-y-3">
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <h2 class="text-sm font-bold text-white">История по датам</h2>
           <div class="flex gap-1.5 text-xs flex-wrap">
@@ -626,7 +626,7 @@
         <div id="historyFeed" class="space-y-2.5"></div>
       </div>
 
-      <div class="ios-card rounded-3xl p-5 space-y-3">
+      <div class="ios-card rounded-3xl p-4 space-y-3">
         <h2 class="text-sm font-bold text-white">Резервная копия на iPhone</h2>
         <p class="text-xs text-zinc-400 leading-relaxed">
           Данные хранятся на вашем iPhone. Раз в неделю сохраняйте JSON-бэкап в «Файлы», чтобы история не пропала при очистке кэша Safari.
@@ -702,7 +702,7 @@
         <span class="text-[10px] font-semibold">Утро</span>
       </button>
       <button type="button" data-tab="workout" class="nav-tab flex flex-col items-center justify-center gap-1 text-zinc-500">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4l2.5 2.5M9.5 2.5h5"/></svg>
         <span class="text-[10px] font-semibold">Тренировка</span>
       </button>
       <button type="button" data-tab="food" class="nav-tab flex flex-col items-center justify-center gap-1 text-zinc-500">
@@ -1027,6 +1027,7 @@
         renderHistory();
         renderChart();
       }
+      window.scrollTo({ top: 0, behavior: "instant" });
       const mainEl = document.getElementById("appMain");
       if (mainEl) mainEl.scrollTop = 0;
     }
