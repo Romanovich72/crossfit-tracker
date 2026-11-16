@@ -20,11 +20,30 @@
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
     body {
       background-color: #000000;
       color: #f5f5f7;
+      display: flex;
+      flex-direction: column;
+      overscroll-behavior: none;
+    }
+    header {
+      flex-shrink: 0;
       padding-top: env(safe-area-inset-top);
-      padding-bottom: calc(92px + env(safe-area-inset-bottom));
+    }
+    main {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
       overscroll-behavior-y: contain;
     }
     button, nav { user-select: none; -webkit-user-select: none; }
@@ -91,10 +110,10 @@
     }
   </style>
 </head>
-<body class="min-h-screen antialiased selection:bg-red-500/30">
+<body class="antialiased selection:bg-red-500/30">
 
   <!-- Sticky Header + Horizontal Date Strip -->
-  <header class="sticky top-0 z-30 bg-black/85 backdrop-blur-xl border-b border-white/[0.08]">
+  <header class="flex-shrink-0 z-30 bg-black/85 backdrop-blur-xl border-b border-white/[0.08]">
     <div class="max-w-xl mx-auto px-4 pt-3 pb-2 space-y-2.5">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2.5">
@@ -119,7 +138,7 @@
     </div>
   </header>
 
-  <main class="max-w-xl mx-auto px-4 pt-3.5 space-y-4">
+  <main id="appMain" class="w-full max-w-xl mx-auto px-4 pt-3.5 pb-6 space-y-4">
 
     <!-- Summary Strip with Delta -->
     <section class="grid grid-cols-3 gap-2.5">
@@ -411,7 +430,21 @@
               Сохранить и скопировать отчёт
             </button>
           </div>
-          <button type="button" id="shareLatestCardBtn" class="w-full py-3 rounded-2xl bg-red-500/12 hover:bg-red-500/20 border border-red-500/30 text-red-300 font-semibold text-xs transition active:scale-[0.98]">
+          <div id="postSaveShareBox" class="hidden ios-subcard rounded-2xl p-3.5 border border-emerald-500/35 bg-emerald-500/10 space-y-2.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-semibold text-emerald-300">✓ Тренировка сохранена</span>
+              <span id="postSaveTitle" class="text-zinc-400 truncate max-w-[160px]"></span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="postSaveShareCardBtn" class="red-glow-btn py-2.5 px-3 rounded-xl text-white font-bold text-xs transition active:scale-95">
+                Поделиться
+              </button>
+              <button type="button" id="postSaveCopyBtn" class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-semibold text-xs transition active:scale-95">
+                Скопировать отчёт
+              </button>
+            </div>
+          </div>
+          <button type="button" id="shareLatestCardBtn" class="w-full py-3 rounded-2xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 font-semibold text-xs transition active:scale-[0.98]">
             Поделиться тренировкой (Карточка 1080×1080)
           </button>
         </form>
@@ -628,7 +661,7 @@
   </div>
 
   <!-- Native iOS Frosted Tab Bar -->
-  <nav class="ios-tab-bar fixed bottom-0 left-0 right-0 z-40">
+  <nav class="ios-tab-bar flex-shrink-0 w-full z-40">
     <div class="max-w-xl mx-auto grid grid-cols-4 h-16">
       <button type="button" data-tab="morning" class="nav-tab flex flex-col items-center justify-center gap-1 text-red-500">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
@@ -669,7 +702,7 @@
   </div>
 
   <!-- Toast Notification -->
-  <div id="toastContainer" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-[90%] max-w-md flex flex-col items-center gap-2"></div>
+  <div id="toastContainer" class="fixed bottom-[calc(76px+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 pointer-events-none w-[90%] max-w-md flex flex-col items-center gap-2"></div>
 
   <script>
     (function registerManifest() {
@@ -959,6 +992,8 @@
         renderHistory();
         renderChart();
       }
+      const mainEl = document.getElementById("appMain");
+      if (mainEl) mainEl.scrollTop = 0;
     }
 
     document.querySelectorAll(".nav-tab").forEach((btn) => {
@@ -1411,14 +1446,28 @@
       };
     }
 
+    let lastSavedWorkout = null;
+
+    function showPostSaveShareBox(entry) {
+      lastSavedWorkout = entry;
+      const box = document.getElementById("postSaveShareBox");
+      const titleEl = document.getElementById("postSaveTitle");
+      if (titleEl) titleEl.textContent = entry.title || entry.format || "";
+      if (box) {
+        box.classList.remove("hidden");
+        box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+
     function saveWorkoutEntry() {
       const form = document.getElementById("workoutForm");
       if (!form.reportValidity()) return null;
       const entry = collectWorkoutFromForm();
       state.workouts.push(entry);
-      state.workouts.sort((a, b) => b.date.localeCompare(a.date));
+      state.workouts.sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
       saveState();
       renderStats();
+      showPostSaveShareBox(entry);
       return entry;
     }
 
@@ -1430,6 +1479,16 @@
     document.getElementById("saveAndCopyBtn").addEventListener("click", () => {
       const saved = saveWorkoutEntry();
       if (saved) copyTextToClipboard(formatReport(saved));
+    });
+
+    document.getElementById("postSaveShareCardBtn").addEventListener("click", () => {
+      const target = lastSavedWorkout || state.workouts[0] || null;
+      openShareCard(target);
+    });
+
+    document.getElementById("postSaveCopyBtn").addEventListener("click", () => {
+      const target = lastSavedWorkout || state.workouts[0] || null;
+      if (target) copyTextToClipboard(formatReport(target));
     });
 
     // --- Food Dictionary & Parser ---
@@ -2398,7 +2457,7 @@
     }
 
     document.getElementById("shareLatestCardBtn").addEventListener("click", () => {
-      const target = state.workouts[0] || null;
+      const target = lastSavedWorkout || state.workouts[0] || null;
       openShareCard(target);
     });
 
