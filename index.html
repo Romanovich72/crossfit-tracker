@@ -9,6 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="WOD Tracker" />
   <meta name="theme-color" content="#000000" />
+  <link rel="manifest" href="./manifest.json" />
 
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23000000'/%3E%3Ccircle cx='90' cy='90' r='62' fill='none' stroke='%2326262e' stroke-width='14'/%3E%3Ccircle cx='90' cy='90' r='62' fill='none' stroke='%23ef4444' stroke-width='14' stroke-dasharray='290 390' stroke-linecap='round' transform='rotate(-90 90 90)'/%3E%3Cpath d='M56 92h14l10-24 14 48 12-34 8 10h12' fill='none' stroke='%23ffffff' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
 
@@ -139,6 +140,14 @@
   </header>
 
   <main id="appMain" class="w-full max-w-xl mx-auto px-4 pt-3.5 pb-6 space-y-4">
+
+    <!-- Dismissible PWA Install Banner -->
+    <div id="installHintBanner" class="hidden ios-card rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-2 border border-red-500/25">
+      <div class="text-[11px] text-zinc-300 leading-snug">
+        <span class="font-bold text-white">Установите как приложение:</span> в Safari нажмите «Поделиться» → «На экран „Домой“».
+      </div>
+      <button id="dismissInstallHintBtn" type="button" class="shrink-0 w-7 h-7 rounded-full bg-white/[0.07] text-zinc-400 hover:text-white text-xs font-bold">×</button>
+    </div>
 
     <!-- Summary Strip with Delta -->
     <section class="grid grid-cols-3 gap-2.5">
@@ -426,7 +435,7 @@
             <button type="submit" class="red-glow-btn w-full py-3.5 rounded-2xl text-white font-bold text-sm transition active:scale-[0.98]">
               Сохранить тренировку
             </button>
-            <button type="button" id="saveAndCopyBtn" class="w-full py-3.5 rounded-2xl bg-white/[0.08] hover:bg-white/12 border border-white/10 text-white font-semibold text-sm transition active:scale-[0.98]">
+            <button type="button" id="saveAndCopyBtn" class="w-full py-3.5 rounded-2xl bg-white/[0.08] hover:bg-white/15 border border-white/10 text-white font-semibold text-sm transition active:scale-[0.98]">
               Сохранить и скопировать отчёт
             </button>
           </div>
@@ -527,7 +536,7 @@
           <button id="parseFoodBtn" type="button" class="red-glow-btn py-3 rounded-2xl text-white text-xs font-bold transition active:scale-95">
             Распознать и добавить
           </button>
-          <button id="toggleManualFoodBtn" type="button" class="py-3 rounded-2xl bg-white/[0.08] hover:bg-white/12 text-zinc-200 text-xs font-semibold transition">
+          <button id="toggleManualFoodBtn" type="button" class="py-3 rounded-2xl bg-white/[0.08] hover:bg-white/15 text-zinc-200 text-xs font-semibold transition">
             Ввести вручную
           </button>
         </div>
@@ -601,7 +610,7 @@
           <button type="button" id="exportJsonBtn" class="py-3 px-3 rounded-2xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/35 text-red-300 text-xs font-semibold transition">
             Скачать JSON-бэкап
           </button>
-          <label class="py-3 px-3 rounded-2xl bg-white/[0.08] hover:bg-white/12 border border-white/10 text-white text-xs font-semibold text-center cursor-pointer transition">
+          <label class="py-3 px-3 rounded-2xl bg-white/[0.08] hover:bg-white/15 border border-white/10 text-white text-xs font-semibold text-center cursor-pointer transition">
             Восстановить из JSON
             <input type="file" id="importJsonInput" accept=".json,application/json" class="hidden" />
           </label>
@@ -651,7 +660,7 @@
     </div>
 
     <div class="grid grid-cols-2 gap-3 max-w-sm mx-auto w-full">
-      <button id="fsStartPauseBtn" type="button" class="py-3.5 rounded-2xl bg-white/12 text-white font-bold text-sm active:scale-95 transition">
+      <button id="fsStartPauseBtn" type="button" class="py-3.5 rounded-2xl bg-white/15 text-white font-bold text-sm active:scale-95 transition">
         Старт
       </button>
       <button id="fsFinishBtn" type="button" class="py-3.5 rounded-2xl bg-red-600/25 border border-red-500/40 text-red-300 font-bold text-sm active:scale-95 transition">
@@ -705,28 +714,11 @@
   <div id="toastContainer" class="fixed bottom-[calc(76px+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 pointer-events-none w-[90%] max-w-md flex flex-col items-center gap-2"></div>
 
   <script>
-    (function registerManifest() {
-      try {
-        const manifest = {
-          name: "WOD Tracker — Кроссфит и питание",
-          short_name: "WOD Tracker",
-          start_url: ".",
-          display: "standalone",
-          background_color: "#000000",
-          theme_color: "#000000",
-          icons: [{
-            src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23000000'/%3E%3Ccircle cx='256' cy='256' r='170' fill='none' stroke='%23ef4444' stroke-width='34' stroke-dasharray='800 1070' stroke-linecap='round' transform='rotate(-90 256 256)'/%3E%3Cpath d='M160 262h40l28-68 40 136 34-96 22 28h34' fill='none' stroke='%23ffffff' stroke-width='20' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
-            sizes: "512x512",
-            type: "image/svg+xml"
-          }]
-        };
-        const blob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
-        const link = document.createElement("link");
-        link.rel = "manifest";
-        link.href = URL.createObjectURL(blob);
-        document.head.appendChild(link);
-      } catch (e) {}
-    })();
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    }
 
     const STORAGE_KEY = "cf_wod_tracker_v2";
     const LEGACY_KEY = "cf_wod_tracker_v1";
@@ -1302,6 +1294,19 @@
         document.getElementById("timerAmrapWrap").classList.toggle("hidden", timerMode !== "amrap");
         document.getElementById("timerConfigRow").classList.toggle("hidden", timerMode === "fortime");
         resetTimer();
+    (function initInstallHint() {
+      try {
+        const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+        const dismissed = localStorage.getItem("wod_install_hint_dismissed") === "1";
+        if (!isStandalone && !dismissed) {
+          document.getElementById("installHintBanner").classList.remove("hidden");
+        }
+        document.getElementById("dismissInstallHintBtn").addEventListener("click", () => {
+          document.getElementById("installHintBanner").classList.add("hidden");
+          localStorage.setItem("wod_install_hint_dismissed", "1");
+        });
+      } catch (e) {}
+    })();
       });
     });
 
@@ -1754,7 +1759,7 @@
       const mornings = allMornings.slice(-14);
       const trends = allTrends.slice(-14);
 
-      document.getElementById("chartPointsLabel").textContent = mornings.length ? `Записей: ${mornings.length}` : "Нет данных";
+      document.getElementById("chartPointsLabel").textContent = mornings.length ? `Записей: ${mornings.length}` : "Добавьте утренние чек-ины";
       if (weightChartInstance) weightChartInstance.destroy();
 
       weightChartInstance = new Chart(canvas, {
@@ -1811,7 +1816,7 @@
       state.workouts.forEach((w) => dateSet.add(w.date));
       const dates = [...dateSet].sort().slice(-14);
 
-      document.getElementById("recoveryChartLabel").textContent = dates.length ? `Дней: ${dates.length}` : "Нет данных";
+      document.getElementById("recoveryChartLabel").textContent = dates.length ? `Дней: ${dates.length}` : "Появится после 1-й записи";
 
       const sleepSeries = dates.map((d) => {
         const m = [...state.mornings].reverse().find((x) => x.date === d);
@@ -2427,29 +2432,30 @@
       for (let i = 0; i < 30; i++) {
         if (activeDates.has(dateOffsetISO(i))) count30++;
       }
-      ctx.fillText(`АКТИВНОСТЬ ЗА 30 ДНЕЙ: ${count30} ТРЕН.`, 92, 770);
+      ctx.fillText(`АКТИВНОСТЬ ЗА 30 ДНЕЙ: ${count30} ТРЕН.`, 92, 745);
 
       const cols = 10;
       const box = 74;
+      const boxH = 40;
       const gap = 16;
       const startX = 92;
-      const startY = 800;
+      const startY = 772;
       for (let i = 29; i >= 0; i--) {
         const idx = 29 - i;
         const r = Math.floor(idx / cols);
         const col = idx % cols;
         const x = startX + col * (box + gap);
-        const y = startY + r * (box + 14);
+        const y = startY + r * (boxH + 14);
         const iso = dateOffsetISO(i);
         const isDone = activeDates.has(iso);
         ctx.fillStyle = isDone ? "#ef4444" : "#181a22";
-        ctx.fillRect(x, y, box, 46);
+        ctx.fillRect(x, y, box, boxH);
       }
 
       // Footer
-      ctx.fillStyle = "#52525b";
+      ctx.fillStyle = "#71717a";
       ctx.font = "600 22px -apple-system, BlinkMacSystemFont, sans-serif";
-      ctx.fillText("romanovich72.github.io/crossfit-tracker", 92, 995);
+      ctx.fillText("romanovich72.github.io/crossfit-tracker", 92, 998);
 
       lastCardDataUrl = c.toDataURL("image/png");
       document.getElementById("shareCardPreview").src = lastCardDataUrl;
