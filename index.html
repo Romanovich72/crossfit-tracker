@@ -105,7 +105,7 @@
           </div>
           <div>
             <h1 class="text-[17px] font-bold tracking-tight text-white leading-tight">WOD Tracker</h1>
-            <p class="text-[11px] text-zinc-400 font-medium" id="headerSubtitle">Кроссфит • Еда • Восстановление</p>
+            <p class="text-[11px] text-zinc-400 font-medium" id="headerSubtitle">Тренировки • Еда • Восстановление</p>
           </div>
         </div>
         <button id="quickCopyBtn" type="button" class="px-3.5 py-2 rounded-full bg-red-500/15 hover:bg-red-500/25 border border-red-500/35 text-red-400 text-xs font-semibold transition active:scale-95 flex items-center gap-1.5">
@@ -411,6 +411,9 @@
               Сохранить и скопировать отчёт
             </button>
           </div>
+          <button type="button" id="shareLatestCardBtn" class="w-full py-3 rounded-2xl bg-red-500/12 hover:bg-red-500/20 border border-red-500/30 text-red-300 font-semibold text-xs transition active:scale-[0.98]">
+            Поделиться тренировкой (Карточка 1080×1080)
+          </button>
         </form>
       </div>
     </section>
@@ -423,29 +426,55 @@
             <h2 class="text-lg font-bold text-white">Питание за день</h2>
             <p class="text-xs text-zinc-400" id="foodDateLabel">Сегодня</p>
           </div>
-          <span class="text-xs font-bold text-red-400">Цель: 2000 ккал</span>
+          <button id="toggleGoalsBtn" type="button" class="text-xs font-semibold px-3 py-1.5 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 active:scale-95 transition">
+            Цели КБЖУ
+          </button>
         </div>
+
+        <!-- Inline Quick Goals Editor -->
+        <form id="goalsForm" class="hidden ios-subcard rounded-2xl p-3 space-y-2.5">
+          <div class="text-[11px] font-semibold text-zinc-300">Ваша дневная норма</div>
+          <div class="grid grid-cols-4 gap-2">
+            <div>
+              <label for="gKcal" class="block text-[10px] text-zinc-400 mb-1">Ккал</label>
+              <input id="gKcal" type="number" min="800" max="6000" value="2000" required class="input-ios w-full rounded-xl px-2 py-1.5 text-xs font-bold" />
+            </div>
+            <div>
+              <label for="gProtein" class="block text-[10px] text-zinc-400 mb-1">Белки (г)</label>
+              <input id="gProtein" type="number" min="20" max="400" value="130" required class="input-ios w-full rounded-xl px-2 py-1.5 text-xs font-bold" />
+            </div>
+            <div>
+              <label for="gFat" class="block text-[10px] text-zinc-400 mb-1">Жиры (г)</label>
+              <input id="gFat" type="number" min="10" max="300" value="70" required class="input-ios w-full rounded-xl px-2 py-1.5 text-xs font-bold" />
+            </div>
+            <div>
+              <label for="gCarbs" class="block text-[10px] text-zinc-400 mb-1">Углев (г)</label>
+              <input id="gCarbs" type="number" min="10" max="800" value="210" required class="input-ios w-full rounded-xl px-2 py-1.5 text-xs font-bold" />
+            </div>
+          </div>
+          <button type="submit" class="w-full py-2 rounded-xl bg-red-600 text-white text-xs font-bold">Сохранить цели</button>
+        </form>
 
         <div class="grid grid-cols-4 gap-2 text-center">
           <div class="ios-subcard rounded-2xl p-2.5">
             <div class="text-[10px] text-zinc-400 font-medium">Ккал</div>
             <div class="text-base font-bold text-white mt-0.5 tabular-nums" id="macroKcal">0</div>
-            <div class="text-[9px] text-red-400 font-semibold">/ 2000</div>
+            <div class="text-[9px] text-red-400 font-semibold" id="goalKcalText">/ 2000</div>
           </div>
           <div class="ios-subcard rounded-2xl p-2.5">
             <div class="text-[10px] text-zinc-400 font-medium">Белки</div>
             <div class="text-base font-bold text-white mt-0.5 tabular-nums" id="macroProtein">0г</div>
-            <div class="text-[9px] text-zinc-500">/ 130г</div>
+            <div class="text-[9px] text-zinc-500" id="goalProteinText">/ 130г</div>
           </div>
           <div class="ios-subcard rounded-2xl p-2.5">
             <div class="text-[10px] text-zinc-400 font-medium">Жиры</div>
             <div class="text-base font-bold text-white mt-0.5 tabular-nums" id="macroFat">0г</div>
-            <div class="text-[9px] text-zinc-500">/ 70г</div>
+            <div class="text-[9px] text-zinc-500" id="goalFatText">/ 70г</div>
           </div>
           <div class="ios-subcard rounded-2xl p-2.5">
             <div class="text-[10px] text-zinc-400 font-medium">Углеводы</div>
             <div class="text-base font-bold text-white mt-0.5 tabular-nums" id="macroCarbs">0г</div>
-            <div class="text-[9px] text-zinc-500">/ 210г</div>
+            <div class="text-[9px] text-zinc-500" id="goalCarbsText">/ 210г</div>
           </div>
         </div>
 
@@ -620,6 +649,25 @@
     </div>
   </nav>
 
+  <!-- Share 1080x1080 Workout Card Modal -->
+  <div id="shareCardModal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="ios-card rounded-3xl p-4 max-w-sm w-full space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold text-white">Карточка тренировки 1080×1080</h3>
+        <button id="closeShareModalBtn" type="button" class="text-xs text-zinc-400 hover:text-white px-2 py-1">Закрыть</button>
+      </div>
+      <img id="shareCardPreview" alt="Карточка тренировки" class="w-full rounded-2xl border border-white/10" />
+      <div class="grid grid-cols-2 gap-2">
+        <button id="downloadShareCardBtn" type="button" class="py-3 rounded-2xl bg-white/[0.08] text-white text-xs font-bold active:scale-95 transition">
+          Скачать PNG
+        </button>
+        <button id="nativeShareCardBtn" type="button" class="red-glow-btn py-3 rounded-2xl text-white text-xs font-bold active:scale-95 transition">
+          Поделиться
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toastContainer" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-[90%] max-w-md flex flex-col items-center gap-2"></div>
 
@@ -649,7 +697,7 @@
 
     const STORAGE_KEY = "cf_wod_tracker_v2";
     const LEGACY_KEY = "cf_wod_tracker_v1";
-    let state = { mornings: [], workouts: [], foods: [], customTemplates: [] };
+    let state = { mornings: [], workouts: [], foods: [], customTemplates: [], goals: { kcal: 2000, protein: 130, fat: 70, carbs: 210 } };
     let currentTab = "morning";
     let historyFilter = "all";
     let weightChartInstance = null;
@@ -722,13 +770,14 @@
               mornings: parsed.mornings,
               workouts: parsed.workouts,
               foods: Array.isArray(parsed.foods) ? parsed.foods : [],
-              customTemplates: Array.isArray(parsed.customTemplates) ? parsed.customTemplates : []
+              customTemplates: Array.isArray(parsed.customTemplates) ? parsed.customTemplates : [],
+              goals: parsed.goals || { kcal: 2000, protein: 130, fat: 70, carbs: 210 }
             };
             return;
           }
         }
       } catch (e) {}
-      state = getDemoData();
+      state = { mornings: [], workouts: [], foods: [], customTemplates: [], goals: { kcal: 2000, protein: 130, fat: 70, carbs: 210 } };
       saveState();
     }
 
@@ -834,7 +883,7 @@
     }
 
     // --- Format Chips ---
-    const FORMAT_OPTIONS = ["E2:30OM (каждые 2:30)", "AMRAP 15 мин", "For Time", "EMOM", "Силовая + WOD"];
+    const FORMAT_OPTIONS = ["E2:30OM (каждые 2:30)", "AMRAP 15 мин", "For Time", "Силовая", "Круговая", "Силовая + WOD"];
     function renderFormatChips() {
       const wrap = document.getElementById("formatChipsWrap");
       wrap.innerHTML = "";
@@ -1521,11 +1570,17 @@
       const list = state.foods.filter((f) => f.date === targetDate);
       let k = 0, p = 0, f = 0, c = 0;
       list.forEach((item) => { k += Number(item.kcal || 0); p += Number(item.protein || 0); f += Number(item.fat || 0); c += Number(item.carbs || 0); });
+      const g = state.goals || { kcal: 2000, protein: 130, fat: 70, carbs: 210 };
+      document.getElementById("goalKcalText").textContent = `/ ${g.kcal}`;
+      document.getElementById("goalProteinText").textContent = `/ ${g.protein}г`;
+      document.getElementById("goalFatText").textContent = `/ ${g.fat}г`;
+      document.getElementById("goalCarbsText").textContent = `/ ${g.carbs}г`;
+
       document.getElementById("macroKcal").textContent = String(Math.round(k));
       document.getElementById("macroProtein").textContent = `${Math.round(p)}г`;
       document.getElementById("macroFat").textContent = `${Math.round(f)}г`;
       document.getElementById("macroCarbs").textContent = `${Math.round(c)}г`;
-      document.getElementById("kcalProgressBar").style.width = `${Math.min(100, Math.round((k / 2000) * 100))}%`;
+      document.getElementById("kcalProgressBar").style.width = `${Math.min(100, Math.round((k / Math.max(1, g.kcal)) * 100))}%`;
 
       const container = document.getElementById("foodDayList");
       if (list.length === 0) {
@@ -1813,13 +1868,15 @@
             ${tagsHtml}
             <div class="flex items-center justify-between text-[11px] text-zinc-400 pt-1.5 border-t border-white/[0.06]">
               <span>RPE: <strong class="text-white">${w.rpe}/10</strong> • Сост: <strong class="text-white">${w.feeling}/10</strong></span>
-              <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2.5">
+                <button type="button" class="share-w-btn text-white font-semibold">Карточка</button>
                 <button type="button" class="copy-w-btn text-red-400 font-semibold">Копировать</button>
                 <button type="button" class="del-btn text-zinc-400 hover:text-red-400 font-semibold">${pendingDeleteId === w.id ? "Точно?" : "Удалить"}</button>
               </div>
             </div>
             ${w.feedback ? `<p class="text-[11px] text-zinc-400 italic">«${escapeHtml(w.feedback)}»</p>` : ""}
           `;
+          card.querySelector(".share-w-btn").addEventListener("click", () => openShareCard(w));
           card.querySelector(".copy-w-btn").addEventListener("click", () => copyTextToClipboard(formatReport(w)));
           card.querySelector(".del-btn").addEventListener("click", () => handleDelete("workout", w.id));
         } else if (item.type === "morning") {
@@ -2186,6 +2243,192 @@
         showToast("Вставьте текст WOD в поле «Комплекс» и нажмите кнопку", "error");
         document.getElementById("wTitle").focus();
       }
+    });
+
+    // --- Goals Editor ---
+    document.getElementById("toggleGoalsBtn").addEventListener("click", () => {
+      const form = document.getElementById("goalsForm");
+      const g = state.goals || { kcal: 2000, protein: 130, fat: 70, carbs: 210 };
+      document.getElementById("gKcal").value = String(g.kcal);
+      document.getElementById("gProtein").value = String(g.protein);
+      document.getElementById("gFat").value = String(g.fat);
+      document.getElementById("gCarbs").value = String(g.carbs);
+      form.classList.toggle("hidden");
+    });
+
+    document.getElementById("goalsForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      state.goals = {
+        kcal: parseInt(document.getElementById("gKcal").value || "2000", 10),
+        protein: parseInt(document.getElementById("gProtein").value || "130", 10),
+        fat: parseInt(document.getElementById("gFat").value || "70", 10),
+        carbs: parseInt(document.getElementById("gCarbs").value || "210", 10)
+      };
+      saveState();
+      document.getElementById("goalsForm").classList.add("hidden");
+      renderFoodDay();
+      showToast("Цели КБЖУ обновлены!");
+    });
+
+    // --- 1080x1080 Workout Share Card Generator with 30-Day Heatmap ---
+    let lastCardDataUrl = "";
+
+    function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+      const words = String(text || "").split(" ");
+      let line = "";
+      let lineCount = 0;
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + " ";
+        if (ctx.measureText(testLine).width > maxWidth && n > 0) {
+          ctx.fillText(line.trim(), x, y);
+          line = words[n] + " ";
+          y += lineHeight;
+          lineCount++;
+          if (lineCount >= maxLines - 1) break;
+        } else {
+          line = testLine;
+        }
+      }
+      if (line.trim()) ctx.fillText(line.trim(), x, y);
+      return y + lineHeight;
+    }
+
+    function openShareCard(workout) {
+      if (!workout) {
+        showToast("Сначала сохраните хотя бы одну тренировку", "error");
+        return;
+      }
+      const c = document.createElement("canvas");
+      c.width = 1080;
+      c.height = 1080;
+      const ctx = c.getContext("2d");
+
+      // OLED Black Background
+      ctx.fillStyle = "#06070a";
+      ctx.fillRect(0, 0, 1080, 1080);
+
+      // Subtle top red radial glow
+      const grad = ctx.createRadialGradient(540, 120, 40, 540, 120, 560);
+      grad.addColorStop(0, "rgba(239, 68, 68, 0.22)");
+      grad.addColorStop(1, "rgba(6, 7, 10, 0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1080, 700);
+
+      // Outer card border
+      ctx.strokeStyle = "rgba(255,255,255,0.1)";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(48, 48, 984, 984);
+
+      // Header
+      ctx.fillStyle = "#ef4444";
+      ctx.font = "bold 30px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText("WOD TRACKER", 92, 122);
+
+      ctx.fillStyle = "#a1a1aa";
+      ctx.font = "600 28px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(workout.date, 988, 122);
+      ctx.textAlign = "left";
+
+      // Format pill
+      ctx.fillStyle = "rgba(239, 68, 68, 0.18)";
+      ctx.fillRect(92, 165, 340, 48);
+      ctx.fillStyle = "#f87171";
+      ctx.font = "bold 24px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText(workout.format.toUpperCase().slice(0, 22), 112, 198);
+
+      // Big Result
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "800 68px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText(String(workout.result || "Выполнено").slice(0, 22), 92, 300);
+
+      // Workout title
+      ctx.fillStyle = "#e4e4e7";
+      ctx.font = "500 32px -apple-system, BlinkMacSystemFont, sans-serif";
+      const nextY = wrapCanvasText(ctx, workout.title, 92, 372, 896, 44, 4);
+
+      // Exercises / Weights summary
+      if (workout.exercises && workout.exercises.length) {
+        ctx.fillStyle = "#a1a1aa";
+        ctx.font = "600 26px -apple-system, BlinkMacSystemFont, sans-serif";
+        const exLine = workout.exercises.map((e) => `${e.name} ${e.weight}`).join("  •  ");
+        wrapCanvasText(ctx, exLine, 92, Math.max(nextY + 12, 560), 896, 36, 2);
+      }
+
+      // RPE & State line
+      ctx.fillStyle = "#ef4444";
+      ctx.font = "bold 28px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText(`RPE: ${workout.rpe}/10    •    Состояние: ${workout.feeling}/10`, 92, 695);
+
+      // 30-Day GitHub-style Activity Heatmap
+      ctx.fillStyle = "#a1a1aa";
+      ctx.font = "600 24px -apple-system, BlinkMacSystemFont, sans-serif";
+      const activeDates = new Set(state.workouts.map((w) => w.date));
+      let count30 = 0;
+      for (let i = 0; i < 30; i++) {
+        if (activeDates.has(dateOffsetISO(i))) count30++;
+      }
+      ctx.fillText(`АКТИВНОСТЬ ЗА 30 ДНЕЙ: ${count30} ТРЕН.`, 92, 770);
+
+      const cols = 10;
+      const box = 74;
+      const gap = 16;
+      const startX = 92;
+      const startY = 800;
+      for (let i = 29; i >= 0; i--) {
+        const idx = 29 - i;
+        const r = Math.floor(idx / cols);
+        const col = idx % cols;
+        const x = startX + col * (box + gap);
+        const y = startY + r * (box + 14);
+        const iso = dateOffsetISO(i);
+        const isDone = activeDates.has(iso);
+        ctx.fillStyle = isDone ? "#ef4444" : "#181a22";
+        ctx.fillRect(x, y, box, 46);
+      }
+
+      // Footer
+      ctx.fillStyle = "#52525b";
+      ctx.font = "600 22px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText("romanovich72.github.io/crossfit-tracker", 92, 995);
+
+      lastCardDataUrl = c.toDataURL("image/png");
+      document.getElementById("shareCardPreview").src = lastCardDataUrl;
+      document.getElementById("shareCardModal").classList.remove("hidden");
+    }
+
+    document.getElementById("shareLatestCardBtn").addEventListener("click", () => {
+      const target = state.workouts[0] || null;
+      openShareCard(target);
+    });
+
+    document.getElementById("closeShareModalBtn").addEventListener("click", () => {
+      document.getElementById("shareCardModal").classList.add("hidden");
+    });
+
+    document.getElementById("downloadShareCardBtn").addEventListener("click", () => {
+      if (!lastCardDataUrl) return;
+      const a = document.createElement("a");
+      a.href = lastCardDataUrl;
+      a.download = `wod-card-${todayISO()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast("Карточка 1080×1080 скачана!");
+    });
+
+    document.getElementById("nativeShareCardBtn").addEventListener("click", async () => {
+      if (!lastCardDataUrl) return;
+      try {
+        const res = await fetch(lastCardDataUrl);
+        const blob = await res.blob();
+        const file = new File([blob], `wod-card-${todayISO()}.png`, { type: "image/png" });
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: "Моя тренировка в WOD Tracker" });
+          return;
+        }
+      } catch (e) {}
+      document.getElementById("downloadShareCardBtn").click();
     });
 
     // --- Init ---
